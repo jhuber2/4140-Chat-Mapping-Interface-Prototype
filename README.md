@@ -1,4 +1,5 @@
 ﻿# Chat Mapping Interface
+# NEW BRANCH CHECK
 
 Chat Mapping Interface is a front-end HCI prototype for visualizing a team conversation in two synchronized ways:
 - `Chat View`: chronological team discussion
