@@ -1,0 +1,7 @@
+On Map View 
+    Didnt work last time --> make it so when I have my fingers on my keypad and they are together then I seperate them on the keypad it zooms in and if I do the oposite it zooms out, this should function just like a lot of other applications, I am talking about when I have my mouse is within the mapview part of the screen where you actually have the nodes, just that part of the screen should be zoomed in on, where currently the only way to zoom in on that part of the screen is by pressing the + and -
+    
+
+Chat View
+    In operator mode it should only show one folder thing at a time, it should be the one that is most recently selected, if it is unasigned there should be a button to assign to open up the folder thing
+    In operator mode if a node has not been selected it should have red text that says, unassigned

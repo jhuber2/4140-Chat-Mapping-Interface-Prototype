@@ -43,27 +43,52 @@ export function MapCanvas({ nodes, selectedNodeId, expandedNodeIds, onNodeClick 
 
   const isVisible = (node: MapNodeData) => {
     if (node.depth <= 1) return true;
-    return node.parentId ? expandedNodeIds.has(node.parentId) : true;
+    let parentId = node.parentId;
+    while (parentId) {
+      if (!expandedNodeIds.has(parentId)) return false;
+      parentId = nodeById.get(parentId)?.parentId ?? null;
+    }
+    return true;
   };
 
   const visibleNodes = useMemo(() => nodes.filter(isVisible), [nodes, expandedNodeIds]);
 
   const positions = useMemo(() => {
-    const levelBuckets = new Map<number, MapNodeData[]>();
-    visibleNodes.forEach((node) => {
-      const bucket = levelBuckets.get(node.depth) ?? [];
-      bucket.push(node);
-      levelBuckets.set(node.depth, bucket);
+    const map = new Map<string, LayoutPoint>();
+    const clampY = (value: number) => Math.max(50, Math.min(WORLD_HEIGHT - 70, value));
+    const depth0 = visibleNodes.filter((node) => node.depth === 0);
+    const depth1 = visibleNodes.filter((node) => node.depth === 1);
+    const depth1Gap = 120;
+
+    depth0.forEach((node, index) => {
+      map.set(node.id, { x: depthX[0], y: 420 + index * 70 });
     });
 
-    const map = new Map<string, LayoutPoint>();
-    [...levelBuckets.entries()].forEach(([depth, depthNodes]) => {
-      const startY = depth === 0 ? 420 : 140;
-      const gap = depth === 1 ? 120 : depth === 2 ? 98 : 86;
-      depthNodes.forEach((node, index) => {
-        map.set(node.id, { x: depthX[depth] ?? 1200, y: startY + index * gap });
-      });
+    depth1.forEach((node, index) => {
+      map.set(node.id, { x: depthX[1], y: 140 + index * depth1Gap });
     });
+
+    const maxDepth = Math.max(...visibleNodes.map((node) => node.depth), 1);
+    for (let depth = 2; depth <= maxDepth; depth += 1) {
+      const parentsAtPreviousDepth = visibleNodes.filter((node) => node.depth === depth - 1);
+      parentsAtPreviousDepth.forEach((parent) => {
+        const parentPosition = map.get(parent.id);
+        if (!parentPosition) return;
+        const children = visibleNodes.filter((node) => node.parentId === parent.id && node.depth === depth);
+        if (children.length === 0) return;
+
+        const childGap = depth === 2 ? 96 : 84;
+        const totalHeight = childGap * (children.length - 1);
+        const startY = parentPosition.y - totalHeight / 2;
+
+        children.forEach((child, index) => {
+          map.set(child.id, {
+            x: depthX[depth] ?? 1200,
+            y: clampY(startY + index * childGap),
+          });
+        });
+      });
+    }
 
     return map;
   }, [visibleNodes]);
@@ -89,6 +114,15 @@ export function MapCanvas({ nodes, selectedNodeId, expandedNodeIds, onNodeClick 
 
   const onWheel = (event: WheelEvent<HTMLDivElement>) => {
     event.preventDefault();
+    if (!(event.ctrlKey || event.metaKey)) {
+      setViewport((current) => ({
+        ...current,
+        x: current.x - event.deltaX,
+        y: current.y - event.deltaY,
+      }));
+      return;
+    }
+
     const rect = viewportRef.current?.getBoundingClientRect();
     if (!rect) return;
 

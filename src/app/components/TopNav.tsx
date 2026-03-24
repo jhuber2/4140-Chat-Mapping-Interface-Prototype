@@ -1,6 +1,6 @@
-﻿type TopNavProps = {
-  currentView: 'chat' | 'map';
-  onChangeView: (view: 'chat' | 'map') => void;
+type TopNavProps = {
+  currentView: 'chat' | 'map' | 'search' | 'alerts' | 'filter';
+  onChangeView: (view: 'chat' | 'map' | 'search' | 'alerts' | 'filter') => void;
 };
 
 export function TopNav({ currentView, onChangeView }: TopNavProps) {
@@ -14,9 +14,15 @@ export function TopNav({ currentView, onChangeView }: TopNavProps) {
         <button className={`nav-tab ${currentView === 'map' ? 'active' : ''}`} onClick={() => onChangeView('map')}>
           Map View
         </button>
-        <button className="icon-button" aria-label="Search">Search</button>
-        <button className="icon-button" aria-label="Notifications">Alerts</button>
-        <button className="icon-button" aria-label="Filter">Filter</button>
+        <button className={`icon-button ${currentView === 'search' ? 'active' : ''}`} aria-label="Search" onClick={() => onChangeView('search')}>
+          Search
+        </button>
+        <button className={`icon-button ${currentView === 'alerts' ? 'active' : ''}`} aria-label="Notifications" onClick={() => onChangeView('alerts')}>
+          Alerts
+        </button>
+        <button className={`icon-button ${currentView === 'filter' ? 'active' : ''}`} aria-label="Filter" onClick={() => onChangeView('filter')}>
+          Filter
+        </button>
       </div>
     </header>
   );

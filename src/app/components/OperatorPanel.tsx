@@ -1,4 +1,5 @@
-﻿import { MapNodeData, Message } from '../types';
+import { useMemo, useState } from 'react';
+import { MapNodeData, Message } from '../types';
 
 type OperatorPanelProps = {
   isOpen: boolean;
@@ -19,6 +20,8 @@ export function OperatorPanel({
   onAssign,
   onCreateNode,
 }: OperatorPanelProps) {
+  const nodeById = useMemo(() => new Map(nodes.map((node) => [node.id, node])), [nodes]);
+
   if (!isOpen) return null;
 
   return (
@@ -37,16 +40,12 @@ export function OperatorPanel({
                 <strong>{message.sender}</strong> · {message.timestamp}
               </p>
               <p>{message.text}</p>
-              <select onChange={(event) => onAssign(message.id, event.target.value)} defaultValue="">
-                <option value="" disabled>
-                  Assign to node
-                </option>
-                {nodes.map((node) => (
-                  <option key={node.id} value={node.id}>
-                    {node.title}
-                  </option>
-                ))}
-              </select>
+              <NodeAssignmentPicker
+                nodes={nodes}
+                nodeById={nodeById}
+                initialSelectedId={message.nodeIds[0] ?? null}
+                onDone={(nodeId) => onAssign(message.id, nodeId)}
+              />
             </div>
           ))}
         </div>
@@ -59,16 +58,7 @@ export function OperatorPanel({
           {unassignedMessages.map((message) => (
             <div key={message.id} className="operator-item">
               <p>{message.text}</p>
-              <select onChange={(event) => onAssign(message.id, event.target.value)} defaultValue="">
-                <option value="" disabled>
-                  Assign to node
-                </option>
-                {nodes.map((node) => (
-                  <option key={node.id} value={node.id}>
-                    {node.title}
-                  </option>
-                ))}
-              </select>
+              <NodeAssignmentPicker nodes={nodes} nodeById={nodeById} initialSelectedId={null} onDone={(nodeId) => onAssign(message.id, nodeId)} />
             </div>
           ))}
         </div>
@@ -80,6 +70,85 @@ export function OperatorPanel({
       </section>
     </aside>
   );
+}
+
+function NodeAssignmentPicker({
+  nodes,
+  nodeById,
+  initialSelectedId,
+  onDone,
+}: {
+  nodes: MapNodeData[];
+  nodeById: Map<string, MapNodeData>;
+  initialSelectedId: string | null;
+  onDone: (nodeId: string) => void;
+}) {
+  const roots = useMemo(() => nodes.filter((node) => !node.parentId), [nodes]);
+  const [path, setPath] = useState<string[]>(() => (initialSelectedId ? nodePath(initialSelectedId, nodeById) : []));
+  const selectedId = path[path.length - 1] ?? null;
+  const selectedNode = selectedId ? nodeById.get(selectedId) : null;
+
+  const columns = useMemo(() => {
+    const result: MapNodeData[][] = [roots];
+    for (const id of path) {
+      const node = nodeById.get(id);
+      if (!node || node.childrenIds.length === 0) break;
+      const nextColumn = node.childrenIds.map((childId) => nodeById.get(childId)).filter((node): node is MapNodeData => Boolean(node));
+      result.push(nextColumn);
+    }
+    return result;
+  }, [roots, path, nodeById]);
+
+  const currentPath = selectedId ? nodePath(selectedId, nodeById) : [];
+
+  return (
+    <div className="node-assignment-picker">
+      {currentPath.length > 0 ? (
+        <div className="node-breadcrumb">
+          {currentPath.map((id, index) => {
+            const node = nodeById.get(id);
+            if (!node) return null;
+            return (
+              <button key={id} type="button" onClick={() => setPath(currentPath.slice(0, index + 1))}>
+                {node.title}
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
+      <div className="node-columns">
+        {columns.map((column, columnIndex) => (
+          <div key={columnIndex} className="node-column">
+            {column.map((node) => (
+              <button
+                type="button"
+                key={node.id}
+                className={path[columnIndex] === node.id ? 'selected' : ''}
+                onClick={() => setPath([...path.slice(0, columnIndex), node.id])}
+              >
+                {node.title}
+              </button>
+            ))}
+          </div>
+        ))}
+      </div>
+      <button type="button" className="node-picker-done" disabled={!selectedNode} onClick={() => selectedNode && onDone(selectedNode.id)}>
+        Done
+      </button>
+    </div>
+  );
+}
+
+function nodePath(nodeId: string, nodeById: Map<string, MapNodeData>) {
+  const path: string[] = [];
+  let current: string | null = nodeId;
+  while (current) {
+    const node = nodeById.get(current);
+    if (!node) break;
+    path.unshift(node.id);
+    current = node.parentId;
+  }
+  return path;
 }
 
 function OperatorCreateForm({

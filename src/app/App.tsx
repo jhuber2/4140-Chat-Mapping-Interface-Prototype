@@ -19,7 +19,7 @@ function timestampNow() {
 }
 
 export default function App() {
-  const [currentView, setCurrentView] = useState<'chat' | 'map'>('map');
+  const [currentView, setCurrentView] = useState<'chat' | 'map' | 'search' | 'alerts' | 'filter'>('map');
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [nodes, setNodes] = useState<MapNodeData[]>(initialNodes);
   const [selectedNodeId, setSelectedNodeId] = useState<string>('topic-auth');
@@ -43,6 +43,12 @@ export default function App() {
     return () => window.removeEventListener('keydown', onKeyDown);
   }, []);
 
+  useEffect(() => {
+    if (currentView !== 'chat') {
+      setOperatorOpen(false);
+    }
+  }, [currentView]);
+
   const expandParentPath = (nodeId: string) => {
     setExpandedNodeIds((current) => {
       const next = new Set(current);
@@ -57,6 +63,21 @@ export default function App() {
     });
   };
 
+  const getDescendantIds = (nodeId: string) => {
+    const descendants = new Set<string>();
+    const stack = [...(nodeById.get(nodeId)?.childrenIds ?? [])];
+    while (stack.length > 0) {
+      const childId = stack.pop();
+      if (!childId || descendants.has(childId)) continue;
+      descendants.add(childId);
+      const child = nodeById.get(childId);
+      if (child) {
+        stack.push(...child.childrenIds);
+      }
+    }
+    return descendants;
+  };
+
   const sendMessage = () => {
     const text = draft.trim();
     if (!text) return;
@@ -68,7 +89,7 @@ export default function App() {
 
     const nextMessage: Message = {
       id,
-      sender: 'You',
+      sender: 'Jack',
       text,
       timestamp: now,
       nodeIds: autoNode ? [autoNode] : [],
@@ -95,17 +116,27 @@ export default function App() {
     const node = nodeById.get(nodeId);
     if (!node) return;
 
-    if (node.childrenIds.length > 0) {
-      setExpandedNodeIds((current) => {
-        const next = new Set(current);
+    setExpandedNodeIds((current) => {
+      const next = new Set(current);
+      const siblingIds = node.parentId ? nodeById.get(node.parentId)?.childrenIds ?? [] : [];
+      siblingIds.forEach((siblingId) => {
+        if (siblingId === nodeId) return;
+        next.delete(siblingId);
+        const siblingDescendants = getDescendantIds(siblingId);
+        siblingDescendants.forEach((id) => next.delete(id));
+      });
+
+      if (node.childrenIds.length > 0) {
         if (next.has(nodeId)) {
+          const descendantIds = getDescendantIds(nodeId);
           next.delete(nodeId);
+          descendantIds.forEach((id) => next.delete(id));
         } else {
           next.add(nodeId);
         }
-        return next;
-      });
-    }
+      }
+      return next;
+    });
 
     setSelectedNodeId(nodeId);
   };
@@ -167,7 +198,7 @@ export default function App() {
       <main className="main-content">
         {currentView === 'chat' ? (
           <ChatView messages={messages} draft={draft} onDraftChange={setDraft} onSend={sendMessage} />
-        ) : (
+        ) : currentView === 'map' ? (
           <MapView
             nodes={enrichedNodes}
             selectedNodeId={selectedNodeId}
@@ -175,6 +206,19 @@ export default function App() {
             onSelectNode={handleSelectNode}
             onOpenSupporting={() => setSupportingOpen(true)}
           />
+        ) : currentView === 'search' ? (
+          <section className="utility-page">
+            <h2>Search</h2>
+            <input className="utility-search-input" placeholder="Search messages, people, or topics..." />
+          </section>
+        ) : currentView === 'alerts' ? (
+          <section className="utility-page">
+            <h2>Alerts</h2>
+          </section>
+        ) : (
+          <section className="utility-page">
+            <h2>Filter</h2>
+          </section>
         )}
       </main>
 
