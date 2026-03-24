@@ -42,7 +42,7 @@ export function MapCanvas({ nodes, selectedNodeId, expandedNodeIds, onNodeClick 
   }, [selectedNodeId, nodeById]);
 
   const isVisible = (node: MapNodeData) => {
-    if (node.depth <= 1) return true;
+    if (node.depth === 0) return true;
     let parentId = node.parentId;
     while (parentId) {
       if (!expandedNodeIds.has(parentId)) return false;
@@ -139,12 +139,32 @@ export function MapCanvas({ nodes, selectedNodeId, expandedNodeIds, onNodeClick 
     });
   };
 
+  const resetViewportForRoot = () => {
+    const rect = viewportRef.current?.getBoundingClientRect();
+    const rootNode = nodes.find((node) => node.parentId === null);
+    const rootPosition = rootNode ? positions.get(rootNode.id) : null;
+    const scale = 0.92;
+
+    if (!rect || !rootPosition) {
+      setViewport({ x: 40, y: 120, scale });
+      return;
+    }
+
+    const targetX = rect.width * 0.2;
+    const targetY = rect.height * 0.5;
+    setViewport({
+      x: targetX - rootPosition.x * scale,
+      y: targetY - rootPosition.y * scale,
+      scale,
+    });
+  };
+
   return (
     <div className="map-workspace">
       <div className="map-toolbar">
         <button onClick={() => setViewport((current) => ({ ...current, scale: Math.min(current.scale + 0.08, 1.45) }))}>+</button>
         <button onClick={() => setViewport((current) => ({ ...current, scale: Math.max(current.scale - 0.08, 0.72) }))}>-</button>
-        <button onClick={() => setViewport({ x: 40, y: 120, scale: 0.92 })}>Reset View</button>
+        <button onClick={resetViewportForRoot}>Reset View</button>
         <span>{Math.round(viewport.scale * 100)}%</span>
       </div>
 

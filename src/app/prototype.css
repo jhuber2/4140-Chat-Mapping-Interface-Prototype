@@ -320,6 +320,11 @@ body {
   justify-content: flex-end;
 }
 
+.chat-row.highlighted .chat-body {
+  background: rgba(84, 116, 176, 0.9);
+  box-shadow: 0 0 0 2px rgba(126, 167, 255, 0.9);
+}
+
 .chat-avatar {
   width: 30px;
   height: 30px;
@@ -515,6 +520,17 @@ body {
   min-width: 0;
 }
 
+.modal-jump-button {
+  margin-top: 8px;
+  border: 1px solid rgba(111, 135, 177, 0.42);
+  border-radius: 8px;
+  background: rgba(17, 35, 69, 0.88);
+  color: #d9e7ff;
+  font-size: 12px;
+  padding: 5px 9px;
+  cursor: pointer;
+}
+
 .operator-toggle {
   position: fixed;
   right: 14px;
@@ -607,6 +623,29 @@ body {
 .node-assignment-picker {
   display: grid;
   gap: 8px;
+}
+
+.message-assignment-control {
+  display: grid;
+  gap: 7px;
+}
+
+.assignment-open-button {
+  width: fit-content;
+  border: 1px solid rgba(111, 135, 177, 0.4);
+  border-radius: 8px;
+  padding: 5px 10px;
+  color: #e7f1ff;
+  background: #27467a;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.assignment-unassigned {
+  margin: 0;
+  color: #ff6f78;
+  font-weight: 600;
+  font-size: 12px;
 }
 
 .node-columns {

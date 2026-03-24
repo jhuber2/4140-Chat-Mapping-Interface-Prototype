@@ -1,4 +1,4 @@
-﻿import { Message } from '../types';
+import { Message } from '../types';
 import { initialsFromSender } from './MessageInput';
 
 type SupportingMessagesModalProps = {
@@ -6,9 +6,11 @@ type SupportingMessagesModalProps = {
   title: string;
   messages: Message[];
   onClose: () => void;
+  senderColorByName: Map<string, string>;
+  onViewInChat: (messageId: string) => void;
 };
 
-export function SupportingMessagesModal({ isOpen, title, messages, onClose }: SupportingMessagesModalProps) {
+export function SupportingMessagesModal({ isOpen, title, messages, onClose, senderColorByName, onViewInChat }: SupportingMessagesModalProps) {
   if (!isOpen) return null;
 
   return (
@@ -25,13 +27,18 @@ export function SupportingMessagesModal({ isOpen, title, messages, onClose }: Su
         <div className="modal-messages">
           {messages.map((message) => (
             <article key={message.id} className="modal-message-row">
-              <div className="chat-avatar">{initialsFromSender(message.sender)}</div>
+              <div className="chat-avatar" style={{ backgroundColor: senderColorByName.get(message.sender) ?? '#2f6bff' }}>
+                {initialsFromSender(message.sender)}
+              </div>
               <div className="modal-message-body">
                 <div className="chat-meta">
                   <span className="chat-sender">{message.sender}</span>
                   <span className="chat-time">{message.timestamp}</span>
                 </div>
                 <p className="chat-text">{message.text}</p>
+                <button className="modal-jump-button" onClick={() => onViewInChat(message.id)}>
+                  View in chat
+                </button>
               </div>
             </article>
           ))}

@@ -1,7 +1,10 @@
-On Map View 
-    Didnt work last time --> make it so when I have my fingers on my keypad and they are together then I seperate them on the keypad it zooms in and if I do the oposite it zooms out, this should function just like a lot of other applications, I am talking about when I have my mouse is within the mapview part of the screen where you actually have the nodes, just that part of the screen should be zoomed in on, where currently the only way to zoom in on that part of the screen is by pressing the + and -
+On Map View Page
+    Zoom --> when I do two finger movements up it should zoom in and down it should zoom out, this is on the node mind map when my mouse is in that box
+    When I press view supporting message give an option to go the the message in the chat view (in this case you should go to where the message is not the bottom of the page)
+    When I press view supporting messages the icons and colors of each person should be the same as those in the chat view (ex. Jacks should be green)
     
 
-Chat View
-    In operator mode it should only show one folder thing at a time, it should be the one that is most recently selected, if it is unasigned there should be a button to assign to open up the folder thing
-    In operator mode if a node has not been selected it should have red text that says, unassigned
+Chat View Page
+    When a message is sent go to the bottom of the page
+    When chat view is first opened start at the bottom of the page
+    No two people should have the same color icon, they should all be unique colors, but every single one that is by a specific person should have the same icon, so Jacks should always be green and no one elses should be the same color green

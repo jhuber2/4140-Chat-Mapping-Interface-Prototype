@@ -29,9 +29,32 @@ export default function App() {
   const [draft, setDraft] = useState('');
   const [assignmentLog, setAssignmentLog] = useState<AssignmentLog[]>([]);
   const [unassignedMessageIds, setUnassignedMessageIds] = useState<string[]>([]);
+  const [focusMessageId, setFocusMessageId] = useState<string | null>(null);
 
   const enrichedNodes = useMemo(() => deriveNodesWithMessageData(nodes, messages), [nodes, messages]);
   const nodeById = useMemo(() => new Map(enrichedNodes.map((node) => [node.id, node])), [enrichedNodes]);
+  const senderColorByName = useMemo(() => {
+    const palette = [
+      '#28a745',
+      '#2f6bff',
+      '#aa5eff',
+      '#d93f7a',
+      '#00a6b2',
+      '#ef4444',
+      '#6d28d9',
+      '#0ea5e9',
+      '#84cc16',
+      '#f59e0b',
+      '#14b8a6',
+      '#e11d48',
+    ];
+    const map = new Map<string, string>();
+    messages.forEach((message) => {
+      if (map.has(message.sender)) return;
+      map.set(message.sender, palette[map.size % palette.length]);
+    });
+    return map;
+  }, [messages]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -197,7 +220,15 @@ export default function App() {
 
       <main className="main-content">
         {currentView === 'chat' ? (
-          <ChatView messages={messages} draft={draft} onDraftChange={setDraft} onSend={sendMessage} />
+          <ChatView
+            messages={messages}
+            draft={draft}
+            onDraftChange={setDraft}
+            onSend={sendMessage}
+            focusMessageId={focusMessageId}
+            onFocusHandled={() => setFocusMessageId(null)}
+            senderColorByName={senderColorByName}
+          />
         ) : currentView === 'map' ? (
           <MapView
             nodes={enrichedNodes}
@@ -227,6 +258,12 @@ export default function App() {
         title={selectedNode?.title ?? 'Node'}
         messages={supportingMessages}
         onClose={() => setSupportingOpen(false)}
+        senderColorByName={senderColorByName}
+        onViewInChat={(messageId) => {
+          setFocusMessageId(messageId);
+          setSupportingOpen(false);
+          setCurrentView('chat');
+        }}
       />
 
       <OperatorPanel

@@ -21,6 +21,7 @@ export function OperatorPanel({
   onCreateNode,
 }: OperatorPanelProps) {
   const nodeById = useMemo(() => new Map(nodes.map((node) => [node.id, node])), [nodes]);
+  const [activePickerMessageId, setActivePickerMessageId] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
@@ -40,11 +41,16 @@ export function OperatorPanel({
                 <strong>{message.sender}</strong> · {message.timestamp}
               </p>
               <p>{message.text}</p>
-              <NodeAssignmentPicker
+              <MessageAssignmentControl
+                message={message}
                 nodes={nodes}
                 nodeById={nodeById}
-                initialSelectedId={message.nodeIds[0] ?? null}
-                onDone={(nodeId) => onAssign(message.id, nodeId)}
+                isActive={activePickerMessageId === message.id}
+                onActivate={() => setActivePickerMessageId(message.id)}
+                onDone={(nodeId) => {
+                  onAssign(message.id, nodeId);
+                  setActivePickerMessageId(null);
+                }}
               />
             </div>
           ))}
@@ -58,7 +64,17 @@ export function OperatorPanel({
           {unassignedMessages.map((message) => (
             <div key={message.id} className="operator-item">
               <p>{message.text}</p>
-              <NodeAssignmentPicker nodes={nodes} nodeById={nodeById} initialSelectedId={null} onDone={(nodeId) => onAssign(message.id, nodeId)} />
+              <MessageAssignmentControl
+                message={message}
+                nodes={nodes}
+                nodeById={nodeById}
+                isActive={activePickerMessageId === message.id}
+                onActivate={() => setActivePickerMessageId(message.id)}
+                onDone={(nodeId) => {
+                  onAssign(message.id, nodeId);
+                  setActivePickerMessageId(null);
+                }}
+              />
             </div>
           ))}
         </div>
@@ -69,6 +85,51 @@ export function OperatorPanel({
         <OperatorCreateForm nodes={nodes} onCreateNode={onCreateNode} />
       </section>
     </aside>
+  );
+}
+
+function MessageAssignmentControl({
+  message,
+  nodes,
+  nodeById,
+  isActive,
+  onActivate,
+  onDone,
+}: {
+  message: Message;
+  nodes: MapNodeData[];
+  nodeById: Map<string, MapNodeData>;
+  isActive: boolean;
+  onActivate: () => void;
+  onDone: (nodeId: string) => void;
+}) {
+  const assignedId = message.nodeIds[0] ?? null;
+  const assignmentPath = assignedId ? nodePath(assignedId, nodeById) : [];
+
+  return (
+    <div className="message-assignment-control">
+      {assignedId ? (
+        <div className="node-breadcrumb">
+          {assignmentPath.map((id) => {
+            const node = nodeById.get(id);
+            if (!node) return null;
+            return (
+              <button key={id} type="button" onClick={onActivate}>
+                {node.title}
+              </button>
+            );
+          })}
+        </div>
+      ) : (
+        <p className="assignment-unassigned">unassigned</p>
+      )}
+
+      <button type="button" className="assignment-open-button" onClick={onActivate}>
+        {assignedId ? 'Change assignment' : 'Assign'}
+      </button>
+
+      {isActive ? <NodeAssignmentPicker nodes={nodes} nodeById={nodeById} initialSelectedId={assignedId} onDone={onDone} /> : null}
+    </div>
   );
 }
 
