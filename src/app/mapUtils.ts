@@ -64,3 +64,64 @@ export function deriveNodesWithMessageData(structureNodes: MapNodeData[], messag
     };
   });
 }
+
+export type NodeSearchResult = {
+  nodeId: string;
+  reason: string;
+  messageCount: number;
+};
+
+export function getPathToRoot(nodeId: string, nodes: MapNodeData[]) {
+  const nodeById = new Map(nodes.map((node) => [node.id, node]));
+  const path: string[] = [];
+  let current: string | null = nodeId;
+
+  while (current) {
+    const node = nodeById.get(current);
+    if (!node) break;
+    path.unshift(node.id);
+    current = node.parentId;
+  }
+
+  return path;
+}
+
+export function searchNodeContexts(query: string, nodes: MapNodeData[], messages: Message[]): NodeSearchResult[] {
+  const normalized = query.trim().toLowerCase();
+  if (!normalized) return [];
+
+  const terms = normalized.split(/[^a-z0-9]+/).filter((term) => term.length >= 2);
+  if (terms.length === 0) return [];
+
+  return nodes
+    .map((node) => {
+      const loweredTitle = node.title.toLowerCase();
+      const directMessages = messages.filter((message) => message.nodeIds.includes(node.id));
+      const matchingTitleTerms = terms.filter((term) => loweredTitle.includes(term));
+      const matchingMessages = directMessages.filter((message) => {
+        const loweredText = message.text.toLowerCase();
+        return terms.some((term) => loweredText.includes(term));
+      });
+
+      if (matchingTitleTerms.length === 0 && matchingMessages.length === 0) return null;
+
+      const matchingMessageTerms = terms.filter((term) =>
+        matchingMessages.some((message) => message.text.toLowerCase().includes(term))
+      );
+      const score = matchingTitleTerms.length * 3 + matchingMessageTerms.length * 2 + matchingMessages.length;
+      const reasonParts: string[] = [];
+
+      if (matchingTitleTerms.length > 0) reasonParts.push(`Title: ${matchingTitleTerms.join(', ')}`);
+      if (matchingMessageTerms.length > 0) reasonParts.push(`Messages: ${matchingMessageTerms.join(', ')}`);
+
+      return {
+        nodeId: node.id,
+        reason: reasonParts.join(' · ') || 'Matched related context',
+        messageCount: matchingMessages.length,
+        score,
+      };
+    })
+    .filter((result): result is NodeSearchResult & { score: number } => Boolean(result))
+    .sort((a, b) => b.score - a.score || b.messageCount - a.messageCount || a.nodeId.localeCompare(b.nodeId))
+    .map(({ score: _score, ...result }) => result);
+}

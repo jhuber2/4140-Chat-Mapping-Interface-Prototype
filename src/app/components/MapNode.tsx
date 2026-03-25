@@ -6,14 +6,15 @@ type MapNodeProps = {
   y: number;
   isSelected: boolean;
   isPath: boolean;
+  isHighlighted: boolean;
   isDimmed: boolean;
   onClick: (nodeId: string) => void;
 };
 
-export function MapNode({ node, x, y, isSelected, isPath, isDimmed, onClick }: MapNodeProps) {
+export function MapNode({ node, x, y, isSelected, isPath, isHighlighted, isDimmed, onClick }: MapNodeProps) {
   return (
     <button
-      className={`map-node depth-${node.depth} ${isSelected ? 'selected' : ''} ${isPath ? 'path' : ''} ${isDimmed ? 'dimmed' : ''}`}
+      className={`map-node depth-${node.depth} ${isSelected ? 'selected' : ''} ${isPath ? 'path' : ''} ${isHighlighted ? 'highlighted' : ''} ${isDimmed ? 'dimmed' : ''}`}
       style={{ left: x, top: y }}
       onClick={() => onClick(node.id)}
     >

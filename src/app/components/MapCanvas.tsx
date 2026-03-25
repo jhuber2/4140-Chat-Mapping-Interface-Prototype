@@ -1,5 +1,6 @@
 import { PointerEvent, WheelEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { MapNodeData } from '../types';
+import type { NodeSearchResult } from '../mapUtils';
 import { MapNode } from './MapNode';
 
 type LayoutPoint = { x: number; y: number };
@@ -8,7 +9,15 @@ type MapCanvasProps = {
   nodes: MapNodeData[];
   selectedNodeId: string | null;
   expandedNodeIds: Set<string>;
+  highlightedNodeIds: Set<string>;
+  breadcrumbNodeIds: string[];
+  searchQuery: string;
+  searchResults: NodeSearchResult[];
   onNodeClick: (nodeId: string) => void;
+  onSearchChange: (value: string) => void;
+  onClearSearch: () => void;
+  onResultSelect: (nodeId: string) => void;
+  onBreadcrumbSelect: (nodeId: string) => void;
 };
 
 const depthX: Record<number, number> = {
@@ -22,7 +31,20 @@ const WORLD_WIDTH = 1400;
 const WORLD_HEIGHT = 980;
 const DEFAULT_SCALE = 0.9;
 
-export function MapCanvas({ nodes, selectedNodeId, expandedNodeIds, onNodeClick }: MapCanvasProps) {
+export function MapCanvas({
+  nodes,
+  selectedNodeId,
+  expandedNodeIds,
+  highlightedNodeIds,
+  breadcrumbNodeIds,
+  searchQuery,
+  searchResults,
+  onNodeClick,
+  onSearchChange,
+  onClearSearch,
+  onResultSelect,
+  onBreadcrumbSelect,
+}: MapCanvasProps) {
   const nodeById = useMemo(() => new Map(nodes.map((node) => [node.id, node])), [nodes]);
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const dragRef = useRef<{ active: boolean; x: number; y: number }>({ active: false, x: 0, y: 0 });
@@ -53,7 +75,7 @@ export function MapCanvas({ nodes, selectedNodeId, expandedNodeIds, onNodeClick 
     return true;
   };
 
-  const visibleNodes = useMemo(() => nodes.filter(isVisible), [nodes, expandedNodeIds]);
+  const visibleNodes = useMemo(() => nodes.filter(isVisible), [nodes, expandedNodeIds, nodeById]);
 
   const positions = useMemo(() => {
     const map = new Map<string, LayoutPoint>();
@@ -168,58 +190,113 @@ export function MapCanvas({ nodes, selectedNodeId, expandedNodeIds, onNodeClick 
         <button onClick={resetViewportForRoot}>Reset View</button>
         <span>{Math.round(viewport.scale * 100)}%</span>
       </div>
-
-      <div
-        ref={viewportRef}
-        className="map-viewport"
-        onWheel={onWheel}
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={onPointerUp}
-      >
-        <div
-          className="map-transform-layer"
-          style={{ width: WORLD_WIDTH, height: WORLD_HEIGHT, transform: `translate(${viewport.x}px, ${viewport.y}px) scale(${viewport.scale})` }}
-        >
-          <svg className="connector-layer" viewBox={`0 0 ${WORLD_WIDTH} ${WORLD_HEIGHT}`}>
-            {visibleNodes.map((node) => {
-              if (!node.parentId) return null;
-              const parent = positions.get(node.parentId);
-              const child = positions.get(node.id);
-              if (!parent || !child) return null;
-
-              const startX = parent.x + 158;
-              const startY = parent.y + 18;
-              const endX = child.x;
-              const endY = child.y + 18;
-              const curve = Math.max(46, (endX - startX) * 0.45);
-              const d = `M ${startX} ${startY} C ${startX + curve} ${startY}, ${endX - curve} ${endY}, ${endX} ${endY}`;
-              const active = pathIds.has(node.parentId) && pathIds.has(node.id);
-              const faded = selectedNodeId && !active;
-
-              return <path key={`${node.parentId}-${node.id}`} d={d} className={`connector ${active ? 'active' : ''} ${faded ? 'faded' : ''}`} />;
-            })}
-          </svg>
-
-          {visibleNodes.map((node) => {
-            const p = positions.get(node.id);
-            if (!p) return null;
-            const isPath = selectedNodeId !== node.id && pathIds.has(node.id);
-            const isDimmed = Boolean(selectedNodeId && !pathIds.has(node.id) && node.depth > 0);
-
+      <div className="map-search-row">
+        <input
+          value={searchQuery}
+          placeholder="Search topics or supporting messages"
+          onChange={(event) => onSearchChange(event.target.value)}
+        />
+        <button type="button" onClick={onClearSearch} disabled={!searchQuery.trim()}>
+          Clear
+        </button>
+      </div>
+      {breadcrumbNodeIds.length > 0 ? (
+        <div className="map-breadcrumb">
+          {breadcrumbNodeIds.map((nodeId) => {
+            const node = nodeById.get(nodeId);
+            if (!node) return null;
             return (
-              <MapNode
-                key={node.id}
-                node={node}
-                x={p.x}
-                y={p.y}
-                isSelected={selectedNodeId === node.id}
-                isPath={isPath}
-                isDimmed={isDimmed}
-                onClick={onNodeClick}
-              />
+              <button key={nodeId} type="button" onClick={() => onBreadcrumbSelect(nodeId)}>
+                {node.title}
+              </button>
             );
           })}
+        </div>
+      ) : null}
+      <div className={`map-canvas-shell ${searchQuery.trim() ? 'has-search-results' : ''}`}>
+        {searchQuery.trim() ? (
+          <aside className="map-search-results-panel">
+            <div className="map-search-results">
+              {searchResults.length > 0 ? (
+                searchResults.slice(0, 6).map((result) => {
+                  const node = nodeById.get(result.nodeId);
+                  if (!node) return null;
+                  return (
+                    <button key={result.nodeId} type="button" className="search-result-item" onClick={() => onResultSelect(result.nodeId)}>
+                      <strong>{node.title}</strong>
+                      <span>{result.reason}</span>
+                      <span>{result.messageCount} direct supporting messages</span>
+                    </button>
+                  );
+                })
+              ) : (
+                <p className="map-search-empty">No topics match this search yet.</p>
+              )}
+            </div>
+          </aside>
+        ) : null}
+
+        <div
+          ref={viewportRef}
+          className="map-viewport"
+          onWheel={onWheel}
+          onPointerDown={onPointerDown}
+          onPointerMove={onPointerMove}
+          onPointerUp={onPointerUp}
+        >
+          <div
+            className="map-transform-layer"
+            style={{ width: WORLD_WIDTH, height: WORLD_HEIGHT, transform: `translate(${viewport.x}px, ${viewport.y}px) scale(${viewport.scale})` }}
+          >
+            <svg className="connector-layer" viewBox={`0 0 ${WORLD_WIDTH} ${WORLD_HEIGHT}`}>
+              {visibleNodes.map((node) => {
+                if (!node.parentId) return null;
+                const parent = positions.get(node.parentId);
+                const child = positions.get(node.id);
+                if (!parent || !child) return null;
+
+                const startX = parent.x + 158;
+                const startY = parent.y + 18;
+                const endX = child.x;
+                const endY = child.y + 18;
+                const curve = Math.max(46, (endX - startX) * 0.45);
+                const d = `M ${startX} ${startY} C ${startX + curve} ${startY}, ${endX - curve} ${endY}, ${endX} ${endY}`;
+                const active = pathIds.has(node.parentId) && pathIds.has(node.id);
+                const highlighted = highlightedNodeIds.has(node.parentId) && highlightedNodeIds.has(node.id);
+                const faded = Boolean(selectedNodeId && !active && !highlighted);
+
+                return (
+                  <path
+                    key={`${node.parentId}-${node.id}`}
+                    d={d}
+                    className={`connector ${active ? 'active' : ''} ${highlighted ? 'highlighted' : ''} ${faded ? 'faded' : ''}`}
+                  />
+                );
+              })}
+            </svg>
+
+            {visibleNodes.map((node) => {
+              const p = positions.get(node.id);
+              if (!p) return null;
+              const isPath = selectedNodeId !== node.id && pathIds.has(node.id);
+              const isHighlighted = highlightedNodeIds.has(node.id);
+              const isDimmed = Boolean(selectedNodeId && !pathIds.has(node.id) && !isHighlighted && node.depth > 0);
+
+              return (
+                <MapNode
+                  key={node.id}
+                  node={node}
+                  x={p.x}
+                  y={p.y}
+                  isSelected={selectedNodeId === node.id}
+                  isPath={isPath}
+                  isHighlighted={isHighlighted}
+                  isDimmed={isDimmed}
+                  onClick={onNodeClick}
+                />
+              );
+            })}
+          </div>
         </div>
       </div>
     </div>
