@@ -1,13 +1,14 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ChatView } from './components/ChatView';
 import { MapView } from './components/MapView';
 import { OperatorView } from './components/OperatorView';
 import { SupportingMessagesModal } from './components/SupportingMessagesModal';
 import { TopNav } from './components/TopNav';
-import { deriveNodesWithMessageData } from './mapUtils';
+import { deriveNodesWithMessageData, getPathToRoot, searchNodeContexts } from './mapUtils';
 import { initialExpandedNodeIds, initialMessages, initialNodes } from './mockData';
 import { routeMessageToNode } from './routingLogic';
 import { AssignmentLog, MapNodeData, Message } from './types';
+import type { NodeSearchResult } from './mapUtils';
 import './prototype.css';
 
 function timestampNow() {
@@ -38,9 +39,21 @@ export default function App() {
   const [assignmentLog, setAssignmentLog] = useState<AssignmentLog[]>([]);
   const [unassignedMessageIds, setUnassignedMessageIds] = useState<string[]>([]);
   const [focusMessageId, setFocusMessageId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<NodeSearchResult[]>([]);
 
   const enrichedNodes = useMemo(() => deriveNodesWithMessageData(nodes, messages), [nodes, messages]);
   const nodeById = useMemo(() => new Map(enrichedNodes.map((node) => [node.id, node])), [enrichedNodes]);
+  const breadcrumbNodeIds = useMemo(() => (selectedNodeId ? getPathToRoot(selectedNodeId, enrichedNodes) : []), [selectedNodeId, enrichedNodes]);
+  const highlightedNodeIds = useMemo(() => {
+    if (!searchQuery.trim()) return new Set<string>();
+
+    const highlightedIds = new Set<string>();
+    searchResults.forEach((result) => {
+      getPathToRoot(result.nodeId, enrichedNodes).forEach((nodeId) => highlightedIds.add(nodeId));
+    });
+    return highlightedIds;
+  }, [searchQuery, searchResults, enrichedNodes]);
   const senderColorByName = useMemo(() => {
     const palette = ['#28a745', '#2f6bff', '#aa5eff', '#d93f7a', '#00a6b2', '#ef4444', '#6d28d9', '#0ea5e9', '#84cc16', '#f59e0b', '#14b8a6', '#e11d48'];
     const map = new Map<string, string>();
@@ -78,6 +91,46 @@ export default function App() {
     return descendants;
   };
 
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setSearchResults([]);
+      return;
+    }
+
+    setSearchResults(searchNodeContexts(searchQuery, enrichedNodes, messages).slice(0, 8));
+  }, [searchQuery, enrichedNodes, messages]);
+
+  const applySelectionState = (nodeId: string, options?: { forceExpandTarget?: boolean }) => {
+    const node = nodeById.get(nodeId);
+    if (!node) return;
+
+    setExpandedNodeIds((current) => {
+      const next = new Set(current);
+      const siblingIds = node.parentId ? nodeById.get(node.parentId)?.childrenIds ?? [] : [];
+      siblingIds.forEach((siblingId) => {
+        if (siblingId === nodeId) return;
+        next.delete(siblingId);
+        const siblingDescendants = getDescendantIds(siblingId);
+        siblingDescendants.forEach((id) => next.delete(id));
+      });
+
+      if (node.childrenIds.length > 0) {
+        if (options?.forceExpandTarget) {
+          next.add(nodeId);
+        } else if (next.has(nodeId)) {
+          const descendantIds = getDescendantIds(nodeId);
+          next.delete(nodeId);
+          descendantIds.forEach((id) => next.delete(id));
+        } else {
+          next.add(nodeId);
+        }
+      }
+      return next;
+    });
+
+    setSelectedNodeId(nodeId);
+  };
+
   const sendMessage = () => {
     const text = draft.trim();
     if (!text) return;
@@ -113,32 +166,7 @@ export default function App() {
   };
 
   const handleSelectNode = (nodeId: string) => {
-    const node = nodeById.get(nodeId);
-    if (!node) return;
-
-    setExpandedNodeIds((current) => {
-      const next = new Set(current);
-      const siblingIds = node.parentId ? nodeById.get(node.parentId)?.childrenIds ?? [] : [];
-      siblingIds.forEach((siblingId) => {
-        if (siblingId === nodeId) return;
-        next.delete(siblingId);
-        const siblingDescendants = getDescendantIds(siblingId);
-        siblingDescendants.forEach((id) => next.delete(id));
-      });
-
-      if (node.childrenIds.length > 0) {
-        if (next.has(nodeId)) {
-          const descendantIds = getDescendantIds(nodeId);
-          next.delete(nodeId);
-          descendantIds.forEach((id) => next.delete(id));
-        } else {
-          next.add(nodeId);
-        }
-      }
-      return next;
-    });
-
-    setSelectedNodeId(nodeId);
+    applySelectionState(nodeId);
   };
 
   const manuallyAssignMessage = (messageId: string, nodeId: string) => {
@@ -192,6 +220,8 @@ export default function App() {
     setExpandedNodeIds(new Set(initialExpandedNodeIds));
     setSupportingOpen(false);
     setFocusMessageId(null);
+    setSearchQuery('');
+    setSearchResults([]);
   };
 
   const selectedNode = nodeById.get(selectedNodeId ?? '') ?? enrichedNodes[0];
@@ -228,8 +258,16 @@ export default function App() {
             nodes={enrichedNodes}
             selectedNodeId={selectedNodeId}
             expandedNodeIds={expandedNodeIds}
+            highlightedNodeIds={highlightedNodeIds}
+            breadcrumbNodeIds={breadcrumbNodeIds}
+            searchQuery={searchQuery}
+            searchResults={searchResults}
             onSelectNode={handleSelectNode}
             onOpenSupporting={() => setSupportingOpen(true)}
+            onSearchChange={setSearchQuery}
+            onClearSearch={() => setSearchQuery('')}
+            onResultSelect={(nodeId) => applySelectionState(nodeId, { forceExpandTarget: true })}
+            onBreadcrumbSelect={(nodeId) => applySelectionState(nodeId, { forceExpandTarget: true })}
           />
         ) : (
           <OperatorView
