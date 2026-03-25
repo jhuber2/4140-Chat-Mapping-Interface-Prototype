@@ -9,8 +9,7 @@ This is intentionally a Wizard-of-Oz prototype.
 
 ## Project Scope
 
-This project is intentionally **frontend-only**:
-- No backend
+This project is intentionally **frontend-only/local-state**:
 - No database
 - No authentication
 - No external AI APIs
@@ -30,22 +29,12 @@ All behavior is implemented with:
 - Selecting a map node opens details and supporting evidence
 
 ### 2) Auto-Routing (Scripted)
-When a user sends a message, a local keyword matcher routes it to a topic node.
-Examples:
-- auth/token/login/401/logout -> authentication branch
-- api/endpoint/request/response -> API branch
-- ui/frontend/layout/button -> UI branch
-- deploy/docker/env/postgres -> deployment branch
-- meeting/sync/schedule -> coordination branch
+When a user sends a message, a local keyword matcher routes it to a project-planning topic node.
 
 Messages that do not strongly match are routed to `General Conversation` or handled manually in operator mode.
 
-### 3) Wizard-of-Oz Operator Mode
-Operator mode is for live demo control when participant input is unexpected.
-
-How to open it:
-- Press `Ctrl + Shift + O`
-- or click the subtle `Ops` floating button
+### 3) Wizard-of-Oz Operator View
+Operator View is for live demo control when participant input is unexpected.
 
 What operators can do:
 - Review recent incoming messages
@@ -106,7 +95,7 @@ From this project directory:
 npm i
 ```
 
-2. Start development server
+2. Start frontend development server
 ```bash
 npm run dev
 ```
@@ -121,5 +110,5 @@ npm run build
 1. Start in `Map View` and show major topic branches
 2. Switch to `Chat View` to show chronological team context
 3. Send a new message and show auto-routing into the map
-4. Open `Ops` mode and manually reassign a message to demonstrate Wizard-of-Oz control
+4. Open `Operator View` and manually reassign a message to demonstrate Wizard-of-Oz control
 5. Open `View Supporting Messages` for a selected node to show evidence traceability

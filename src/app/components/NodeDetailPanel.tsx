@@ -6,11 +6,11 @@ type NodeDetailPanelProps = {
 };
 
 export function NodeDetailPanel({ node, onViewMessages }: NodeDetailPanelProps) {
-  if (!node || node.id === 'root-dev-team') {
+  if (!node || node.id === 'root-group-project') {
     return (
       <aside className="detail-panel empty">
-        <h3>Node Details</h3>
-        <p>Select a topic to inspect summary, decisions, and supporting messages.</p>
+        <h3>Topic Details</h3>
+        <p>Select a topic to inspect summary, decisions, and messages in this topic.</p>
       </aside>
     );
   }
@@ -41,7 +41,7 @@ export function NodeDetailPanel({ node, onViewMessages }: NodeDetailPanelProps) 
 
       {node.supportingMessageIds.length > 0 ? (
         <button className="supporting-button" onClick={onViewMessages}>
-          View Supporting Messages
+          View Messages in This Topic
         </button>
       ) : null}
     </aside>

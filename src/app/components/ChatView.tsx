@@ -10,18 +10,56 @@ type ChatViewProps = {
   focusMessageId: string | null;
   onFocusHandled: () => void;
   senderColorByName: Map<string, string>;
+  chatEntryIntent: 'startup' | 'tab' | 'focus' | null;
+  onChatEntryIntentHandled: () => void;
 };
 
-export function ChatView({ messages, draft, onDraftChange, onSend, focusMessageId, onFocusHandled, senderColorByName }: ChatViewProps) {
+export function ChatView({
+  messages,
+  draft,
+  onDraftChange,
+  onSend,
+  focusMessageId,
+  onFocusHandled,
+  senderColorByName,
+  chatEntryIntent,
+  onChatEntryIntentHandled,
+}: ChatViewProps) {
   const threadRef = useRef<HTMLDivElement | null>(null);
   const rowRefs = useRef(new Map<string, HTMLElement>());
   const [highlightedMessageId, setHighlightedMessageId] = useState<string | null>(null);
   const suppressAutoScrollRef = useRef(false);
+  const previousMessageCountRef = useRef(messages.length);
 
   useEffect(() => {
-    if (!threadRef.current) return;
+    const thread = threadRef.current;
+    if (!thread) return;
+
+    if (chatEntryIntent === 'startup' || chatEntryIntent === 'tab') {
+      if (!focusMessageId && !suppressAutoScrollRef.current) {
+        thread.scrollTop = thread.scrollHeight;
+      }
+      onChatEntryIntentHandled();
+      return;
+    }
+
+    if (chatEntryIntent === 'focus') {
+      onChatEntryIntentHandled();
+      return;
+    }
+  }, [chatEntryIntent, focusMessageId, onChatEntryIntentHandled]);
+
+  useEffect(() => {
+    const thread = threadRef.current;
+    if (!thread) return;
+
+    const previousCount = previousMessageCountRef.current;
+    previousMessageCountRef.current = messages.length;
+
+    const didAppendMessage = messages.length > previousCount;
+    if (!didAppendMessage) return;
     if (focusMessageId || suppressAutoScrollRef.current) return;
-    threadRef.current.scrollTop = threadRef.current.scrollHeight;
+      thread.scrollTop = thread.scrollHeight;
   }, [messages.length, focusMessageId]);
 
   useEffect(() => {
@@ -61,12 +99,12 @@ export function ChatView({ messages, draft, onDraftChange, onSend, focusMessageI
   return (
     <section className="chat-view">
       <div className="chat-view-header">
-        <h2>Team Conversation</h2>
+        <h2>Group Project Chat</h2>
         <p>{messages.length} messages in this session</p>
       </div>
       <div className="chat-thread" ref={threadRef}>
         {messages.map((message) => {
-          const isSelf = message.sender === 'Jack';
+          const isSelf = message.sender === 'Jack Huber';
           return (
             <article
               key={messageKey(message)}

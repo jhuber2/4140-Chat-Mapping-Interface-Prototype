@@ -1,4 +1,4 @@
-import { PointerEvent, WheelEvent, useMemo, useRef, useState } from 'react';
+import { PointerEvent, WheelEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { MapNodeData } from '../types';
 import { MapNode } from './MapNode';
 
@@ -20,12 +20,14 @@ const depthX: Record<number, number> = {
 
 const WORLD_WIDTH = 1400;
 const WORLD_HEIGHT = 980;
+const DEFAULT_SCALE = 0.9;
 
 export function MapCanvas({ nodes, selectedNodeId, expandedNodeIds, onNodeClick }: MapCanvasProps) {
   const nodeById = useMemo(() => new Map(nodes.map((node) => [node.id, node])), [nodes]);
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const dragRef = useRef<{ active: boolean; x: number; y: number }>({ active: false, x: 0, y: 0 });
-  const [viewport, setViewport] = useState({ x: 40, y: 120, scale: 0.92 });
+  const didInitialCenterRef = useRef(false);
+  const [viewport, setViewport] = useState({ x: 0, y: 0, scale: DEFAULT_SCALE });
 
   const pathIds = useMemo(() => {
     const ids = new Set<string>();
@@ -141,23 +143,22 @@ export function MapCanvas({ nodes, selectedNodeId, expandedNodeIds, onNodeClick 
 
   const resetViewportForRoot = () => {
     const rect = viewportRef.current?.getBoundingClientRect();
-    const rootNode = nodes.find((node) => node.parentId === null);
-    const rootPosition = rootNode ? positions.get(rootNode.id) : null;
-    const scale = 0.92;
-
-    if (!rect || !rootPosition) {
-      setViewport({ x: 40, y: 120, scale });
+    if (!rect) {
+      setViewport({ x: 0, y: 0, scale: DEFAULT_SCALE });
       return;
     }
 
-    const targetX = rect.width * 0.2;
-    const targetY = rect.height * 0.5;
-    setViewport({
-      x: targetX - rootPosition.x * scale,
-      y: targetY - rootPosition.y * scale,
-      scale,
-    });
+    const centered = centerVisibleNodes(rect.width, rect.height, visibleNodes, positions, DEFAULT_SCALE);
+    setViewport(centered);
   };
+
+  useEffect(() => {
+    if (didInitialCenterRef.current) return;
+    const rect = viewportRef.current?.getBoundingClientRect();
+    if (!rect || rect.width <= 0 || rect.height <= 0 || visibleNodes.length === 0) return;
+    setViewport(centerVisibleNodes(rect.width, rect.height, visibleNodes, positions, DEFAULT_SCALE));
+    didInitialCenterRef.current = true;
+  }, [positions, visibleNodes]);
 
   return (
     <div className="map-workspace">
@@ -223,4 +224,41 @@ export function MapCanvas({ nodes, selectedNodeId, expandedNodeIds, onNodeClick 
       </div>
     </div>
   );
+}
+
+function centerVisibleNodes(
+  width: number,
+  height: number,
+  visibleNodes: MapNodeData[],
+  positions: Map<string, LayoutPoint>,
+  scale: number
+) {
+  const fallback = { x: 0, y: 0, scale };
+  if (visibleNodes.length === 0) return fallback;
+
+  let minX = Number.POSITIVE_INFINITY;
+  let maxX = Number.NEGATIVE_INFINITY;
+  let minY = Number.POSITIVE_INFINITY;
+  let maxY = Number.NEGATIVE_INFINITY;
+
+  visibleNodes.forEach((node) => {
+    const position = positions.get(node.id);
+    if (!position) return;
+    minX = Math.min(minX, position.x);
+    maxX = Math.max(maxX, position.x + 220);
+    minY = Math.min(minY, position.y);
+    maxY = Math.max(maxY, position.y + 44);
+  });
+
+  if (!Number.isFinite(minX) || !Number.isFinite(minY) || !Number.isFinite(maxX) || !Number.isFinite(maxY)) {
+    return fallback;
+  }
+
+  const centerX = (minX + maxX) / 2;
+  const centerY = (minY + maxY) / 2;
+  return {
+    x: width / 2 - centerX * scale,
+    y: height / 2 - centerY * scale,
+    scale,
+  };
 }

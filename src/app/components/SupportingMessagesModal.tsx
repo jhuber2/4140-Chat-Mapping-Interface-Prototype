@@ -18,10 +18,10 @@ export function SupportingMessagesModal({ isOpen, title, messages, onClose, send
       <div className="modal-card" onClick={(event) => event.stopPropagation()}>
         <div className="modal-header">
           <div>
-            <h3>Supporting Messages</h3>
+            <h3>Messages in Topic</h3>
             <p>{title}</p>
           </div>
-          <button aria-label="Close modal" onClick={onClose}>×</button>
+          <button aria-label="Close modal" onClick={onClose}>x</button>
         </div>
 
         <div className="modal-messages">

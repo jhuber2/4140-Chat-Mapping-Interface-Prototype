@@ -2,6 +2,13 @@
   color-scheme: dark;
 }
 
+html,
+body,
+#root {
+  height: 100%;
+  overflow: hidden;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -14,7 +21,8 @@ body {
 }
 
 .prototype-shell {
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
   background: linear-gradient(120deg, rgba(7, 22, 47, 0.98) 0%, rgba(6, 19, 42, 0.98) 55%, rgba(5, 16, 37, 0.98) 100%);
 }
 
@@ -70,6 +78,7 @@ body {
 .main-content {
   height: calc(100vh - 64px);
   padding: 16px 18px 16px 20px;
+  overflow: hidden;
 }
 
 .map-view-layout {
@@ -427,6 +436,112 @@ body {
   outline: none;
 }
 
+.operator-view-layout {
+  height: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: 14px;
+}
+
+.operator-view-main,
+.operator-view-side {
+  min-height: 0;
+  border: 1px solid rgba(117, 147, 203, 0.2);
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(14, 30, 60, 0.94) 0%, rgba(11, 23, 48, 0.98) 100%);
+  box-shadow: 0 8px 20px rgba(2, 10, 24, 0.34);
+}
+
+.operator-view-main {
+  padding: 16px;
+  overflow: auto;
+}
+
+.operator-view-side {
+  padding: 14px;
+  overflow: auto;
+  display: grid;
+  align-content: start;
+  gap: 10px;
+}
+
+.operator-view-header h2 {
+  margin: 0;
+  font-size: 22px;
+}
+
+.operator-view-header p {
+  margin: 4px 0 0;
+  color: #9bb7e2;
+  font-size: 13px;
+}
+
+.operator-view-section {
+  margin-top: 14px;
+}
+
+.operator-view-section h3 {
+  margin: 0 0 6px;
+  font-size: 14px;
+}
+
+.operator-view-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.operator-view-item {
+  border: 1px solid rgba(111, 135, 177, 0.3);
+  border-radius: 10px;
+  background: rgba(13, 29, 58, 0.78);
+  padding: 10px;
+}
+
+.operator-view-item p {
+  margin: 0 0 6px;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.operator-view-item-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: center;
+}
+
+.operator-topic-tree {
+  border: 1px solid rgba(111, 135, 177, 0.3);
+  border-radius: 8px;
+  background: #09162e;
+  padding: 8px;
+  max-height: 240px;
+  overflow: auto;
+}
+
+.operator-topic-item p {
+  margin: 0;
+  padding: 4px 6px;
+  border-radius: 6px;
+  font-size: 12px;
+  color: #d6e6ff;
+}
+
+.operator-topic-item p:hover {
+  background: rgba(49, 84, 146, 0.35);
+}
+
+.operator-view-activity {
+  display: grid;
+  gap: 6px;
+}
+
+.operator-view-activity p {
+  margin: 0;
+  font-size: 12px;
+}
+
 .message-input-wrap {
   margin-top: 10px;
   display: flex;
@@ -758,5 +873,9 @@ body {
 
   .icon-button {
     display: none;
+  }
+
+  .operator-view-layout {
+    grid-template-columns: 1fr;
   }
 }
