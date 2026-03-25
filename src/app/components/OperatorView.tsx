@@ -1,98 +1,117 @@
 import { useMemo, useState } from 'react';
-import { MapNodeData, Message } from '../types';
+import { AssignmentLog, MapNodeData, Message } from '../types';
 
-type OperatorPanelProps = {
-  isOpen: boolean;
-  recentMessages: Message[];
+type OperatorViewProps = {
+  messages: Message[];
   unassignedMessages: Message[];
   nodes: MapNodeData[];
-  onClose: () => void;
+  assignmentLog: AssignmentLog[];
   onAssign: (messageId: string, nodeId: string) => void;
   onCreateNode: (title: string, parentId: string) => void;
   onResetDemo: () => void;
 };
 
-export function OperatorPanel({
-  isOpen,
-  recentMessages,
-  unassignedMessages,
-  nodes,
-  onClose,
-  onAssign,
-  onCreateNode,
-  onResetDemo,
-}: OperatorPanelProps) {
+export function OperatorView({ messages, unassignedMessages, nodes, assignmentLog, onAssign, onCreateNode, onResetDemo }: OperatorViewProps) {
   const nodeById = useMemo(() => new Map(nodes.map((node) => [node.id, node])), [nodes]);
+  const rootNodes = useMemo(() => nodes.filter((node) => !node.parentId), [nodes]);
   const [activePickerMessageId, setActivePickerMessageId] = useState<string | null>(null);
-
-  if (!isOpen) return null;
+  const orderedMessages = useMemo(() => [...messages].reverse(), [messages]);
 
   return (
-    <aside className="operator-panel">
-      <div className="operator-header">
-        <h3>Operator Panel</h3>
-        <button onClick={onClose}>Close</button>
+    <section className="operator-view-layout">
+      <div className="operator-view-main">
+        <header className="operator-view-header">
+          <h2>Operator View</h2>
+          <p>Review incoming messages and route each one to the right topic.</p>
+        </header>
+
+        <section className="operator-view-section">
+          <h3>Incoming Messages</h3>
+          <p className="muted">{messages.length} total messages</p>
+          <div className="operator-view-list">
+            {orderedMessages.map((message) => (
+              <article key={message.id} className="operator-view-item">
+                <div className="operator-view-item-header">
+                  <p>
+                    <strong>{message.sender}</strong> - {message.timestamp}
+                  </p>
+                  <p className="muted">{statusLabel(message, unassignedMessages)}</p>
+                </div>
+                <p>{message.text}</p>
+                <MessageAssignmentControl
+                  message={message}
+                  nodes={nodes}
+                  nodeById={nodeById}
+                  isActive={activePickerMessageId === message.id}
+                  onActivate={() => setActivePickerMessageId(message.id)}
+                  onDone={(nodeId) => {
+                    onAssign(message.id, nodeId);
+                    setActivePickerMessageId(null);
+                  }}
+                />
+              </article>
+            ))}
+          </div>
+        </section>
       </div>
 
-      <section>
-        <h4>Recent Messages</h4>
-        <div className="operator-list">
-          {recentMessages.map((message) => (
-            <div key={message.id} className="operator-item">
-              <p>
-                <strong>{message.sender}</strong> - {message.timestamp}
-              </p>
-              <p>{message.text}</p>
-              <MessageAssignmentControl
-                message={message}
-                nodes={nodes}
-                nodeById={nodeById}
-                isActive={activePickerMessageId === message.id}
-                onActivate={() => setActivePickerMessageId(message.id)}
-                onDone={(nodeId) => {
-                  onAssign(message.id, nodeId);
-                  setActivePickerMessageId(null);
-                }}
-              />
-            </div>
-          ))}
-        </div>
-      </section>
+      <aside className="operator-view-side">
+        <section className="operator-view-section">
+          <h3>Topic Reference</h3>
+          <div className="operator-topic-tree">
+            {rootNodes.map((root) => (
+              <TopicTree key={root.id} node={root} nodeById={nodeById} depth={0} />
+            ))}
+          </div>
+        </section>
 
-      <section>
-        <h4>Unassigned Messages</h4>
-        <div className="operator-list">
-          {unassignedMessages.length === 0 ? <p className="muted">No unassigned messages.</p> : null}
-          {unassignedMessages.map((message) => (
-            <div key={message.id} className="operator-item">
-              <p>{message.text}</p>
-              <MessageAssignmentControl
-                message={message}
-                nodes={nodes}
-                nodeById={nodeById}
-                isActive={activePickerMessageId === message.id}
-                onActivate={() => setActivePickerMessageId(message.id)}
-                onDone={(nodeId) => {
-                  onAssign(message.id, nodeId);
-                  setActivePickerMessageId(null);
-                }}
-              />
-            </div>
-          ))}
-        </div>
-      </section>
+        <section className="operator-view-section">
+          <h3>Create Topic</h3>
+          <OperatorCreateForm nodes={nodes} onCreateNode={onCreateNode} />
+        </section>
 
-      <section>
-        <h4>Create Topic</h4>
-        <OperatorCreateForm nodes={nodes} onCreateNode={onCreateNode} />
-      </section>
+        <section className="operator-view-section">
+          <h3>Recent Assignment Activity</h3>
+          <div className="operator-view-activity">
+            {assignmentLog.length === 0 ? <p className="muted">No assignment activity yet.</p> : null}
+            {assignmentLog.slice(0, 8).map((log) => {
+              const nodeTitle = log.nodeId ? nodeById.get(log.nodeId)?.title ?? 'Unknown Topic' : 'Unassigned';
+              return (
+                <p key={`${log.messageId}-${log.at}`}>
+                  <strong>{log.mode}</strong>: {nodeTitle}
+                </p>
+              );
+            })}
+          </div>
+        </section>
 
-      <section>
-        <button type="button" className="assignment-open-button" onClick={onResetDemo}>
-          Reset Demo
-        </button>
-      </section>
-    </aside>
+        <section className="operator-view-section">
+          <button type="button" className="assignment-open-button" onClick={onResetDemo}>
+            Reset Demo
+          </button>
+        </section>
+      </aside>
+    </section>
+  );
+}
+
+function statusLabel(message: Message, unassignedMessages: Message[]) {
+  if (unassignedMessages.some((current) => current.id === message.id)) return 'Unassigned';
+  if (message.assignedManually) return 'Manually assigned';
+  if (message.autoMapped) return 'Auto-routed';
+  return 'Needs review';
+}
+
+function TopicTree({ node, nodeById, depth }: { node: MapNodeData; nodeById: Map<string, MapNodeData>; depth: number }) {
+  return (
+    <div className="operator-topic-item" style={{ marginLeft: depth * 12 }}>
+      <p>{node.title}</p>
+      {node.childrenIds.map((childId) => {
+        const child = nodeById.get(childId);
+        if (!child) return null;
+        return <TopicTree key={child.id} node={child} nodeById={nodeById} depth={depth + 1} />;
+      })}
+    </div>
   );
 }
 

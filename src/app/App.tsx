@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { ChatView } from './components/ChatView';
 import { MapView } from './components/MapView';
-import { OperatorPanel } from './components/OperatorPanel';
+import { OperatorView } from './components/OperatorView';
 import { SupportingMessagesModal } from './components/SupportingMessagesModal';
 import { TopNav } from './components/TopNav';
 import { deriveNodesWithMessageData } from './mapUtils';
@@ -18,30 +18,38 @@ function timestampNow() {
   return `${month} ${day}, ${time}`;
 }
 
+function cloneSeedNodes() {
+  return initialNodes.map((node) => ({ ...node, metadata: { ...node.metadata }, decisions: node.decisions ? [...node.decisions] : undefined, supportingMessageIds: [...node.supportingMessageIds], childrenIds: [...node.childrenIds] }));
+}
+
+function cloneSeedMessages() {
+  return initialMessages.map((message) => ({ ...message, nodeIds: [...message.nodeIds] }));
+}
+
 export default function App() {
-  const [currentView, setCurrentView] = useState<'chat' | 'map'>('map');
-  const [messages, setMessages] = useState<Message[]>(initialMessages);
-  const [nodes, setNodes] = useState<MapNodeData[]>(initialNodes);
-  const [selectedNodeId, setSelectedNodeId] = useState<string>('topic-auth');
+  const [currentView, setCurrentView] = useState<'chat' | 'map' | 'operator'>('chat');
+  const [chatEntryIntent, setChatEntryIntent] = useState<'startup' | 'tab' | 'focus' | null>('startup');
+  const [messages, setMessages] = useState<Message[]>(() => cloneSeedMessages());
+  const [nodes, setNodes] = useState<MapNodeData[]>(() => cloneSeedNodes());
+  const [selectedNodeId, setSelectedNodeId] = useState<string>('root-group-project');
   const [expandedNodeIds, setExpandedNodeIds] = useState<Set<string>>(new Set(initialExpandedNodeIds));
   const [supportingOpen, setSupportingOpen] = useState(false);
-  const [operatorOpen, setOperatorOpen] = useState(false);
   const [draft, setDraft] = useState('');
   const [assignmentLog, setAssignmentLog] = useState<AssignmentLog[]>([]);
   const [unassignedMessageIds, setUnassignedMessageIds] = useState<string[]>([]);
+  const [focusMessageId, setFocusMessageId] = useState<string | null>(null);
 
   const enrichedNodes = useMemo(() => deriveNodesWithMessageData(nodes, messages), [nodes, messages]);
   const nodeById = useMemo(() => new Map(enrichedNodes.map((node) => [node.id, node])), [enrichedNodes]);
-
-  useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.ctrlKey && event.shiftKey && event.key.toLowerCase() === 'o') {
-        setOperatorOpen((open) => !open);
-      }
-    };
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, []);
+  const senderColorByName = useMemo(() => {
+    const palette = ['#28a745', '#2f6bff', '#aa5eff', '#d93f7a', '#00a6b2', '#ef4444', '#6d28d9', '#0ea5e9', '#84cc16', '#f59e0b', '#14b8a6', '#e11d48'];
+    const map = new Map<string, string>();
+    messages.forEach((message) => {
+      if (map.has(message.sender)) return;
+      map.set(message.sender, palette[map.size % palette.length]);
+    });
+    return map;
+  }, [messages]);
 
   const expandParentPath = (nodeId: string) => {
     setExpandedNodeIds((current) => {
@@ -57,6 +65,19 @@ export default function App() {
     });
   };
 
+  const getDescendantIds = (nodeId: string) => {
+    const descendants = new Set<string>();
+    const stack = [...(nodeById.get(nodeId)?.childrenIds ?? [])];
+    while (stack.length > 0) {
+      const childId = stack.pop();
+      if (!childId || descendants.has(childId)) continue;
+      descendants.add(childId);
+      const child = nodeById.get(childId);
+      if (child) stack.push(...child.childrenIds);
+    }
+    return descendants;
+  };
+
   const sendMessage = () => {
     const text = draft.trim();
     if (!text) return;
@@ -68,7 +89,7 @@ export default function App() {
 
     const nextMessage: Message = {
       id,
-      sender: 'You',
+      sender: 'Jack Huber',
       text,
       timestamp: now,
       nodeIds: autoNode ? [autoNode] : [],
@@ -95,17 +116,27 @@ export default function App() {
     const node = nodeById.get(nodeId);
     if (!node) return;
 
-    if (node.childrenIds.length > 0) {
-      setExpandedNodeIds((current) => {
-        const next = new Set(current);
+    setExpandedNodeIds((current) => {
+      const next = new Set(current);
+      const siblingIds = node.parentId ? nodeById.get(node.parentId)?.childrenIds ?? [] : [];
+      siblingIds.forEach((siblingId) => {
+        if (siblingId === nodeId) return;
+        next.delete(siblingId);
+        const siblingDescendants = getDescendantIds(siblingId);
+        siblingDescendants.forEach((id) => next.delete(id));
+      });
+
+      if (node.childrenIds.length > 0) {
         if (next.has(nodeId)) {
+          const descendantIds = getDescendantIds(nodeId);
           next.delete(nodeId);
+          descendantIds.forEach((id) => next.delete(id));
         } else {
           next.add(nodeId);
         }
-        return next;
-      });
-    }
+      }
+      return next;
+    });
 
     setSelectedNodeId(nodeId);
   };
@@ -113,7 +144,6 @@ export default function App() {
   const manuallyAssignMessage = (messageId: string, nodeId: string) => {
     const now = timestampNow();
 
-    // Manual operator assignment for unexpected participant responses.
     setMessages((current) =>
       current.map((message) =>
         message.id === messageId
@@ -149,25 +179,51 @@ export default function App() {
       depth: Math.min(parent.depth + 1, 3),
     };
 
-    setNodes((current) =>
-      current.map((node) => (node.id === parentId ? { ...node, childrenIds: [...node.childrenIds, id] } : node)).concat(newNode)
-    );
+    setNodes((current) => current.map((node) => (node.id === parentId ? { ...node, childrenIds: [...node.childrenIds, id] } : node)).concat(newNode));
     setExpandedNodeIds((current) => new Set(current).add(parentId));
+  };
+
+  const resetDemo = () => {
+    setMessages(cloneSeedMessages());
+    setNodes(cloneSeedNodes());
+    setAssignmentLog([]);
+    setUnassignedMessageIds([]);
+    setSelectedNodeId('root-group-project');
+    setExpandedNodeIds(new Set(initialExpandedNodeIds));
+    setSupportingOpen(false);
+    setFocusMessageId(null);
   };
 
   const selectedNode = nodeById.get(selectedNodeId ?? '') ?? enrichedNodes[0];
   const supportingMessages = messages.filter((message) => selectedNode?.supportingMessageIds.includes(message.id));
   const unassignedMessages = messages.filter((message) => unassignedMessageIds.includes(message.id));
-  const recentMessages = [...messages].slice(-12).reverse();
+
+  const handleChangeView = (view: 'chat' | 'map' | 'operator') => {
+    if (view === 'chat') setChatEntryIntent('tab');
+    setCurrentView(view);
+  };
 
   return (
     <div className="prototype-shell">
-      <TopNav currentView={currentView} onChangeView={setCurrentView} />
+      <TopNav currentView={currentView} onChangeView={handleChangeView} />
 
       <main className="main-content">
         {currentView === 'chat' ? (
-          <ChatView messages={messages} draft={draft} onDraftChange={setDraft} onSend={sendMessage} />
-        ) : (
+          <ChatView
+            messages={messages}
+            draft={draft}
+            onDraftChange={setDraft}
+            onSend={sendMessage}
+            focusMessageId={focusMessageId}
+            onFocusHandled={() => {
+              setFocusMessageId(null);
+              setChatEntryIntent(null);
+            }}
+            senderColorByName={senderColorByName}
+            chatEntryIntent={chatEntryIntent}
+            onChatEntryIntentHandled={() => setChatEntryIntent(null)}
+          />
+        ) : currentView === 'map' ? (
           <MapView
             nodes={enrichedNodes}
             selectedNodeId={selectedNodeId}
@@ -175,29 +231,32 @@ export default function App() {
             onSelectNode={handleSelectNode}
             onOpenSupporting={() => setSupportingOpen(true)}
           />
+        ) : (
+          <OperatorView
+            messages={messages}
+            unassignedMessages={unassignedMessages}
+            nodes={enrichedNodes}
+            assignmentLog={assignmentLog}
+            onAssign={manuallyAssignMessage}
+            onCreateNode={createNode}
+            onResetDemo={resetDemo}
+          />
         )}
       </main>
 
       <SupportingMessagesModal
         isOpen={supportingOpen}
-        title={selectedNode?.title ?? 'Node'}
+        title={selectedNode?.title ?? 'Topic'}
         messages={supportingMessages}
         onClose={() => setSupportingOpen(false)}
+        senderColorByName={senderColorByName}
+        onViewInChat={(messageId) => {
+          setFocusMessageId(messageId);
+          setChatEntryIntent('focus');
+          setSupportingOpen(false);
+          setCurrentView('chat');
+        }}
       />
-
-      <OperatorPanel
-        isOpen={operatorOpen}
-        onClose={() => setOperatorOpen(false)}
-        recentMessages={recentMessages}
-        unassignedMessages={unassignedMessages}
-        nodes={enrichedNodes}
-        onAssign={manuallyAssignMessage}
-        onCreateNode={createNode}
-      />
-
-      <button className="operator-toggle" title={`Routing logs: ${assignmentLog.length}`} onClick={() => setOperatorOpen((open) => !open)}>
-        Ops
-      </button>
     </div>
   );
 }
