@@ -4,6 +4,7 @@ import { MessageInput, initialsFromSender, messageKey } from './MessageInput';
 
 type ChatViewProps = {
   messages: Message[];
+  selfSenderLabel: string;
   draft: string;
   onDraftChange: (value: string) => void;
   onSend: () => void;
@@ -16,6 +17,7 @@ type ChatViewProps = {
 
 export function ChatView({
   messages,
+  selfSenderLabel,
   draft,
   onDraftChange,
   onSend,
@@ -104,7 +106,7 @@ export function ChatView({
       </div>
       <div className="chat-thread" ref={threadRef}>
         {messages.map((message) => {
-          const isSelf = message.sender === 'Jack Huber';
+          const isSelf = message.sender === selfSenderLabel;
           return (
             <article
               key={messageKey(message)}

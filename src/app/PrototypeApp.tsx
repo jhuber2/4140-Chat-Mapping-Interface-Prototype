@@ -255,6 +255,7 @@ export default function PrototypeApp() {
         {currentView === 'chat' ? (
           <ChatView
             messages={messages}
+            selfSenderLabel={user?.displayName ?? 'You'}
             draft={draft}
             onDraftChange={setDraft}
             onSend={sendMessage}
