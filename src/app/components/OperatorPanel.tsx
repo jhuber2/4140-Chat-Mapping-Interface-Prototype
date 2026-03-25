@@ -9,7 +9,7 @@ type OperatorPanelProps = {
   onClose: () => void;
   onAssign: (messageId: string, nodeId: string) => void;
   onCreateNode: (title: string, parentId: string) => void;
-  onResetDemo: () => void;
+  onResetWorkspace: () => void;
 };
 
 export function OperatorPanel({
@@ -20,7 +20,7 @@ export function OperatorPanel({
   onClose,
   onAssign,
   onCreateNode,
-  onResetDemo,
+  onResetWorkspace,
 }: OperatorPanelProps) {
   const nodeById = useMemo(() => new Map(nodes.map((node) => [node.id, node])), [nodes]);
   const [activePickerMessageId, setActivePickerMessageId] = useState<string | null>(null);
@@ -30,7 +30,7 @@ export function OperatorPanel({
   return (
     <aside className="operator-panel">
       <div className="operator-header">
-        <h3>Operator Panel</h3>
+        <h3>Facilitator tools</h3>
         <button onClick={onClose}>Close</button>
       </div>
 
@@ -88,8 +88,8 @@ export function OperatorPanel({
       </section>
 
       <section>
-        <button type="button" className="assignment-open-button" onClick={onResetDemo}>
-          Reset Demo
+        <button type="button" className="assignment-open-button" onClick={onResetWorkspace}>
+          Reset workspace
         </button>
       </section>
     </aside>

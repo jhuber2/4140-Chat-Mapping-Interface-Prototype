@@ -12,7 +12,7 @@ const routeGroups: Array<{ nodeId: string; keywords: string[] }> = [
   { nodeId: 'issues', keywords: ['cannot', "can't", 'conflict', 'late', 'behind', 'missing', 'have not seen', 'blocked'] },
 ];
 
-// Intentionally simple Wizard-of-Oz keyword routing for demo clarity.
+// Lightweight keyword-based routing for incoming chat messages.
 export function routeMessageToNode(text: string): RouteResult {
   const lower = text.toLowerCase();
 

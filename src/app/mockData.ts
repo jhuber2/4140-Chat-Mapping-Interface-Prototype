@@ -1,6 +1,6 @@
 import { MapNodeData, Message } from './types';
 
-// Wizard-of-Oz prototype seed data lives here.
+// Starter workspace content for new sessions.
 export const initialNodes: MapNodeData[] = [
   {
     id: 'root-group-project',
@@ -115,11 +115,11 @@ export const initialNodes: MapNodeData[] = [
   },
   {
     id: 'deliverable-demo-script',
-    title: 'Demo Script',
+    title: 'Walkthrough script',
     parentId: 'planning-deliverables',
-    summary: 'Scripted walkthrough order so the live demo stays short and clear.',
+    summary: 'Speaking notes and click path so the in-class walkthrough stays within time.',
     metadata: {},
-    decisions: ['Keep the demo under 3 minutes', 'Assign one narrator and one operator'],
+    decisions: ['Keep the walkthrough under 3 minutes', 'Assign one narrator and one navigator'],
     supportingMessageIds: [],
     childrenIds: [],
     depth: 3,
@@ -146,7 +146,7 @@ export const initialNodes: MapNodeData[] = [
   },
   {
     id: 'assign-demo',
-    title: 'Demo',
+    title: 'Walkthrough',
     parentId: 'topic-assignments',
     summary: 'Who presents and runs the interactive walkthrough.',
     metadata: {},
@@ -188,7 +188,7 @@ export const initialNodes: MapNodeData[] = [
     id: 'decision-tool',
     title: 'Tool Choice',
     parentId: 'topic-decisions',
-    summary: 'Chosen tools and stack for building the demo prototype.',
+    summary: 'Chosen tools and stack for the client and collaboration workflow.',
     metadata: {},
     supportingMessageIds: [],
     childrenIds: [],
@@ -235,19 +235,19 @@ export const initialMessages: Message[] = [
   { id: 'msg-16', sender: 'Emmanuel Jimenez', text: 'I cannot meet Wednesday night after all, lab got extended.', timestamp: 'Apr 8, 7:51 PM', nodeIds: ['issue-scheduling'], autoMapped: true, assignedManually: false },
   { id: 'msg-17', sender: 'Boyd Coates', text: 'I still have not seen the final outline doc in the folder.', timestamp: 'Apr 8, 7:54 PM', nodeIds: ['issue-missing-work'], autoMapped: true, assignedManually: false },
   { id: 'msg-18', sender: 'Jack Huber', text: 'For the presentation deck, keep it to six slides max.', timestamp: 'Apr 8, 8:01 PM', nodeIds: ['deliverable-presentation'], autoMapped: true, assignedManually: false },
-  { id: 'msg-19', sender: 'Graham Elgin', text: 'I started a demo script with intro, map click-through, and wrap-up.', timestamp: 'Apr 8, 8:05 PM', nodeIds: ['deliverable-demo-script'], autoMapped: true, assignedManually: false },
+  { id: 'msg-19', sender: 'Graham Elgin', text: 'I started a walkthrough script with intro, map click-through, and wrap-up.', timestamp: 'Apr 8, 8:05 PM', nodeIds: ['deliverable-demo-script'], autoMapped: true, assignedManually: false },
   { id: 'msg-20', sender: 'Emmanuel Jimenez', text: 'Can someone drop the rubric link again?', timestamp: 'Apr 8, 8:12 PM', nodeIds: ['topic-general'], autoMapped: true, assignedManually: false },
   { id: 'msg-21', sender: 'Boyd Coates', text: 'Meeting update: Thursday 5:30 in the library room.', timestamp: 'Apr 9, 10:14 AM', nodeIds: ['planning-meeting-time'], autoMapped: true, assignedManually: false },
   { id: 'msg-22', sender: 'Jack Huber', text: 'Timeline check: research notes by Thursday night, slides by Sunday noon.', timestamp: 'Apr 9, 10:18 AM', nodeIds: ['planning-timeline'], autoMapped: true, assignedManually: false },
-  { id: 'msg-23', sender: 'Graham Elgin', text: 'I can present the demo section and Boyd can handle transitions.', timestamp: 'Apr 9, 10:25 AM', nodeIds: ['assign-demo'], autoMapped: true, assignedManually: false },
+  { id: 'msg-23', sender: 'Graham Elgin', text: 'I can present the walkthrough section and Boyd can handle transitions.', timestamp: 'Apr 9, 10:25 AM', nodeIds: ['assign-demo'], autoMapped: true, assignedManually: false },
   { id: 'msg-24', sender: 'Emmanuel Jimenez', text: 'I can help with research citations once Jack posts sources.', timestamp: 'Apr 9, 10:31 AM', nodeIds: ['assign-research'], autoMapped: true, assignedManually: false },
   { id: 'msg-25', sender: 'Boyd Coates', text: 'Slides are 40 percent done, waiting on final screenshots.', timestamp: 'Apr 9, 10:38 AM', nodeIds: ['assign-slides'], autoMapped: true, assignedManually: false },
-  { id: 'msg-26', sender: 'Jack Huber', text: 'Decision confirmed: no backend for this demo, local data only.', timestamp: 'Apr 9, 10:44 AM', nodeIds: ['decision-tool'], autoMapped: true, assignedManually: false },
+  { id: 'msg-26', sender: 'Jack Huber', text: 'Decision confirmed: we ship the in-browser client first and schedule API work for the next milestone.', timestamp: 'Apr 9, 10:44 AM', nodeIds: ['decision-tool'], autoMapped: true, assignedManually: false },
   { id: 'msg-27', sender: 'Graham Elgin', text: 'Are we sure we are not over-scoping this?', timestamp: 'Apr 9, 10:50 AM', nodeIds: ['question-scope'], autoMapped: true, assignedManually: false },
   { id: 'msg-28', sender: 'Emmanuel Jimenez', text: 'I am behind on my part because of two midterms this week.', timestamp: 'Apr 9, 10:56 AM', nodeIds: ['issue-missing-work'], autoMapped: true, assignedManually: false },
   { id: 'msg-29', sender: 'Boyd Coates', text: 'I might be 10 minutes late to Thursday meeting.', timestamp: 'Apr 9, 11:02 AM', nodeIds: ['issue-scheduling'], autoMapped: true, assignedManually: false },
   { id: 'msg-30', sender: 'Jack Huber', text: 'For deliverables, we submit slides plus one-page summary PDF.', timestamp: 'Apr 9, 11:08 AM', nodeIds: ['planning-deliverables'], autoMapped: true, assignedManually: false },
-  { id: 'msg-31', sender: 'Graham Elgin', text: 'The demo script should include one manual reassignment example.', timestamp: 'Apr 9, 11:14 AM', nodeIds: ['deliverable-demo-script'], autoMapped: true, assignedManually: false },
+  { id: 'msg-31', sender: 'Graham Elgin', text: 'The walkthrough script should include one manual reassignment example.', timestamp: 'Apr 9, 11:14 AM', nodeIds: ['deliverable-demo-script'], autoMapped: true, assignedManually: false },
   { id: 'msg-32', sender: 'Emmanuel Jimenez', text: 'I am not sure where this belongs but I can talk if needed.', timestamp: 'Apr 9, 11:22 AM', nodeIds: ['topic-general'], autoMapped: true, assignedManually: false },
   { id: 'msg-33', sender: 'Boyd Coates', text: 'Deck draft is up now, please review slide 3 and slide 4.', timestamp: 'Apr 9, 11:30 AM', nodeIds: ['deliverable-presentation'], autoMapped: true, assignedManually: false },
   { id: 'msg-34', sender: 'Jack Huber', text: 'Great, this gives us a clean story from messy chat to clear topics.', timestamp: 'Apr 9, 11:36 AM', nodeIds: ['topic-general'], autoMapped: true, assignedManually: false },

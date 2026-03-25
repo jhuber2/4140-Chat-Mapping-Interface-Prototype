@@ -8,10 +8,10 @@ type OperatorViewProps = {
   assignmentLog: AssignmentLog[];
   onAssign: (messageId: string, nodeId: string) => void;
   onCreateNode: (title: string, parentId: string) => void;
-  onResetDemo: () => void;
+  onResetWorkspace: () => void;
 };
 
-export function OperatorView({ messages, unassignedMessages, nodes, assignmentLog, onAssign, onCreateNode, onResetDemo }: OperatorViewProps) {
+export function OperatorView({ messages, unassignedMessages, nodes, assignmentLog, onAssign, onCreateNode, onResetWorkspace }: OperatorViewProps) {
   const nodeById = useMemo(() => new Map(nodes.map((node) => [node.id, node])), [nodes]);
   const rootNodes = useMemo(() => nodes.filter((node) => !node.parentId), [nodes]);
   const [activePickerMessageId, setActivePickerMessageId] = useState<string | null>(null);
@@ -21,7 +21,7 @@ export function OperatorView({ messages, unassignedMessages, nodes, assignmentLo
     <section className="operator-view-layout">
       <div className="operator-view-main">
         <header className="operator-view-header">
-          <h2>Operator View</h2>
+          <h2>Facilitator</h2>
           <p>Review incoming messages and route each one to the right topic.</p>
         </header>
 
@@ -86,8 +86,8 @@ export function OperatorView({ messages, unassignedMessages, nodes, assignmentLo
         </section>
 
         <section className="operator-view-section">
-          <button type="button" className="assignment-open-button" onClick={onResetDemo}>
-            Reset Demo
+          <button type="button" className="assignment-open-button" onClick={onResetWorkspace}>
+            Reset workspace
           </button>
         </section>
       </aside>
