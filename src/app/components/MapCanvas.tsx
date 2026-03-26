@@ -9,6 +9,7 @@ type MapCanvasProps = {
   nodes: MapNodeData[];
   selectedNodeId: string | null;
   expandedNodeIds: Set<string>;
+  inStartupOverview: boolean;
   highlightedNodeIds: Set<string>;
   breadcrumbNodeIds: string[];
   searchQuery: string;
@@ -35,6 +36,7 @@ export function MapCanvas({
   nodes,
   selectedNodeId,
   expandedNodeIds,
+  inStartupOverview,
   highlightedNodeIds,
   breadcrumbNodeIds,
   searchQuery,
@@ -46,6 +48,8 @@ export function MapCanvas({
   onBreadcrumbSelect,
 }: MapCanvasProps) {
   const nodeById = useMemo(() => new Map(nodes.map((node) => [node.id, node])), [nodes]);
+  const hasSelection = Boolean(selectedNodeId);
+  const isNeutralOverview = !hasSelection && !inStartupOverview;
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const dragRef = useRef<{ active: boolean; x: number; y: number }>({ active: false, x: 0, y: 0 });
   const didInitialCenterRef = useRef(false);
@@ -261,9 +265,9 @@ export function MapCanvas({
                 const endY = child.y + 18;
                 const curve = Math.max(46, (endX - startX) * 0.45);
                 const d = `M ${startX} ${startY} C ${startX + curve} ${startY}, ${endX - curve} ${endY}, ${endX} ${endY}`;
-                const active = pathIds.has(node.parentId) && pathIds.has(node.id);
+                const active = hasSelection ? pathIds.has(node.parentId) && pathIds.has(node.id) : false;
                 const highlighted = highlightedNodeIds.has(node.parentId) && highlightedNodeIds.has(node.id);
-                const faded = Boolean(selectedNodeId && !active && !highlighted);
+                const faded = hasSelection && !active && !highlighted;
 
                 return (
                   <path
@@ -278,9 +282,9 @@ export function MapCanvas({
             {visibleNodes.map((node) => {
               const p = positions.get(node.id);
               if (!p) return null;
-              const isPath = selectedNodeId !== node.id && pathIds.has(node.id);
+              const isPath = hasSelection ? selectedNodeId !== node.id && pathIds.has(node.id) : false;
               const isHighlighted = highlightedNodeIds.has(node.id);
-              const isDimmed = Boolean(selectedNodeId && !pathIds.has(node.id) && !isHighlighted && node.depth > 0);
+              const isDimmed = inStartupOverview ? node.depth > 0 : hasSelection ? !pathIds.has(node.id) && !isHighlighted && node.depth > 0 : false;
 
               return (
                 <MapNode
@@ -292,6 +296,7 @@ export function MapCanvas({
                   isPath={isPath}
                   isHighlighted={isHighlighted}
                   isDimmed={isDimmed}
+                  isNeutral={isNeutralOverview}
                   onClick={onNodeClick}
                 />
               );

@@ -35,8 +35,10 @@ export default function PrototypeApp() {
   const [chatEntryIntent, setChatEntryIntent] = useState<'startup' | 'tab' | 'focus' | null>('startup');
   const [messages, setMessages] = useState<Message[]>(() => cloneSeedMessages());
   const [nodes, setNodes] = useState<MapNodeData[]>(() => cloneSeedNodes());
-  const [selectedNodeId, setSelectedNodeId] = useState<string>('root-group-project');
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [expandedNodeIds, setExpandedNodeIds] = useState<Set<string>>(new Set(initialExpandedNodeIds));
+  const [hasEnteredMapView, setHasEnteredMapView] = useState(false);
+  const [hasInteractedWithMap, setHasInteractedWithMap] = useState(false);
   const [supportingOpen, setSupportingOpen] = useState(false);
   const [draft, setDraft] = useState('');
   const [assignmentLog, setAssignmentLog] = useState<AssignmentLog[]>([]);
@@ -44,6 +46,7 @@ export default function PrototypeApp() {
   const [focusMessageId, setFocusMessageId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<NodeSearchResult[]>([]);
+  const selfSenderLabel = useMemo(() => (user?.displayName ? user.displayName.split(' ')[0] : 'You'), [user?.displayName]);
 
   const enrichedNodes = useMemo(() => deriveNodesWithMessageData(nodes, messages), [nodes, messages]);
   const nodeById = useMemo(() => new Map(enrichedNodes.map((node) => [node.id, node])), [enrichedNodes]);
@@ -142,7 +145,7 @@ export default function PrototypeApp() {
     const id = `msg-${Date.now()}`;
     const route = routeMessageToNode(text);
     const autoNode = route.nodeId;
-    const senderName = user?.displayName ?? 'You';
+    const senderName = selfSenderLabel;
 
     const nextMessage: Message = {
       id,
@@ -170,6 +173,7 @@ export default function PrototypeApp() {
   };
 
   const handleSelectNode = (nodeId: string) => {
+    setHasInteractedWithMap(true);
     applySelectionState(nodeId);
   };
 
@@ -220,8 +224,10 @@ export default function PrototypeApp() {
     setNodes(cloneSeedNodes());
     setAssignmentLog([]);
     setUnassignedMessageIds([]);
-    setSelectedNodeId('root-group-project');
+    setSelectedNodeId(null);
     setExpandedNodeIds(new Set(initialExpandedNodeIds));
+    setHasEnteredMapView(false);
+    setHasInteractedWithMap(false);
     setSupportingOpen(false);
     setFocusMessageId(null);
     setSearchQuery('');
@@ -234,6 +240,11 @@ export default function PrototypeApp() {
 
   const handleChangeView = (view: 'chat' | 'map' | 'operator') => {
     if (view === 'chat') setChatEntryIntent('tab');
+    if (view === 'map' && !hasEnteredMapView) {
+      setSelectedNodeId(null);
+      setExpandedNodeIds(new Set(initialExpandedNodeIds));
+      setHasEnteredMapView(true);
+    }
     setCurrentView(view);
   };
 
@@ -255,7 +266,7 @@ export default function PrototypeApp() {
         {currentView === 'chat' ? (
           <ChatView
             messages={messages}
-            selfSenderLabel={user?.displayName ?? 'You'}
+            selfSenderLabel={selfSenderLabel}
             draft={draft}
             onDraftChange={setDraft}
             onSend={sendMessage}
@@ -273,6 +284,7 @@ export default function PrototypeApp() {
             nodes={enrichedNodes}
             selectedNodeId={selectedNodeId}
             expandedNodeIds={expandedNodeIds}
+            inStartupOverview={hasEnteredMapView && !hasInteractedWithMap && !selectedNodeId}
             highlightedNodeIds={highlightedNodeIds}
             breadcrumbNodeIds={breadcrumbNodeIds}
             searchQuery={searchQuery}
