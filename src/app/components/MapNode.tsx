@@ -8,13 +8,16 @@ type MapNodeProps = {
   isPath: boolean;
   isHighlighted: boolean;
   isDimmed: boolean;
+  isNeutral: boolean;
   onClick: (nodeId: string) => void;
 };
 
-export function MapNode({ node, x, y, isSelected, isPath, isHighlighted, isDimmed, onClick }: MapNodeProps) {
+export function MapNode({ node, x, y, isSelected, isPath, isHighlighted, isDimmed, isNeutral, onClick }: MapNodeProps) {
+  const stateClass = isNeutral ? 'neutral' : isSelected ? 'selected' : isPath ? 'path' : isHighlighted ? 'highlighted' : isDimmed ? 'dimmed' : '';
+
   return (
     <button
-      className={`map-node depth-${node.depth} ${isSelected ? 'selected' : ''} ${isPath ? 'path' : ''} ${isHighlighted ? 'highlighted' : ''} ${isDimmed ? 'dimmed' : ''}`}
+      className={`map-node depth-${node.depth} ${stateClass}`}
       style={{ left: x, top: y }}
       onClick={() => onClick(node.id)}
     >

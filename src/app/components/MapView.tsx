@@ -7,6 +7,7 @@ type MapViewProps = {
   nodes: MapNodeData[];
   selectedNodeId: string | null;
   expandedNodeIds: Set<string>;
+  inStartupOverview: boolean;
   highlightedNodeIds: Set<string>;
   breadcrumbNodeIds: string[];
   searchQuery: string;
@@ -23,6 +24,7 @@ export function MapView({
   nodes,
   selectedNodeId,
   expandedNodeIds,
+  inStartupOverview,
   highlightedNodeIds,
   breadcrumbNodeIds,
   searchQuery,
@@ -42,6 +44,7 @@ export function MapView({
         nodes={nodes}
         selectedNodeId={selectedNodeId}
         expandedNodeIds={expandedNodeIds}
+        inStartupOverview={inStartupOverview}
         highlightedNodeIds={highlightedNodeIds}
         breadcrumbNodeIds={breadcrumbNodeIds}
         searchQuery={searchQuery}

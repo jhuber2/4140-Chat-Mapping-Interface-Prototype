@@ -6,7 +6,7 @@ type NodeDetailPanelProps = {
 };
 
 export function NodeDetailPanel({ node, onViewMessages }: NodeDetailPanelProps) {
-  if (!node || node.id === 'root-group-project') {
+  if (!node || node.id === '0') {
     return (
       <aside className="detail-panel empty">
         <h3>Topic Details</h3>
