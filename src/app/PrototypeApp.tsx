@@ -46,6 +46,7 @@ export default function PrototypeApp() {
   const [focusMessageId, setFocusMessageId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<NodeSearchResult[]>([]);
+  const selfSenderLabel = useMemo(() => (user?.displayName ? user.displayName.split(' ')[0] : 'You'), [user?.displayName]);
 
   const enrichedNodes = useMemo(() => deriveNodesWithMessageData(nodes, messages), [nodes, messages]);
   const nodeById = useMemo(() => new Map(enrichedNodes.map((node) => [node.id, node])), [enrichedNodes]);
@@ -144,7 +145,7 @@ export default function PrototypeApp() {
     const id = `msg-${Date.now()}`;
     const route = routeMessageToNode(text);
     const autoNode = route.nodeId;
-    const senderName = user?.displayName ?? 'You';
+    const senderName = selfSenderLabel;
 
     const nextMessage: Message = {
       id,
@@ -265,7 +266,7 @@ export default function PrototypeApp() {
         {currentView === 'chat' ? (
           <ChatView
             messages={messages}
-            selfSenderLabel={user?.displayName ?? 'You'}
+            selfSenderLabel={selfSenderLabel}
             draft={draft}
             onDraftChange={setDraft}
             onSend={sendMessage}
