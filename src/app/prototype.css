@@ -1025,6 +1025,35 @@ body {
   text-overflow: ellipsis;
 }
 
+.nav-connection-status {
+  margin-left: 2px;
+  border: 1px solid rgba(110, 139, 194, 0.36);
+  border-radius: 999px;
+  padding: 4px 9px;
+  font-size: 11px;
+  color: #cfe0ff;
+  background: rgba(19, 35, 70, 0.52);
+  line-height: 1;
+}
+
+.nav-connection-status.connected {
+  color: #b8f7d0;
+  border-color: rgba(53, 194, 113, 0.45);
+  background: rgba(16, 64, 38, 0.45);
+}
+
+.nav-connection-status.connecting {
+  color: #ffe7ba;
+  border-color: rgba(229, 171, 58, 0.45);
+  background: rgba(84, 58, 14, 0.45);
+}
+
+.nav-connection-status.disconnected {
+  color: #ffd1d1;
+  border-color: rgba(214, 86, 86, 0.45);
+  background: rgba(84, 22, 22, 0.45);
+}
+
 .nav-logout {
   margin-left: 6px;
   border: 1px solid rgba(110, 139, 194, 0.35);

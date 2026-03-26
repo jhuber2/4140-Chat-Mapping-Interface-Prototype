@@ -9,15 +9,16 @@ This is intentionally a Wizard-of-Oz prototype.
 
 ## Project Scope
 
-This project is intentionally **frontend-only/local-state**:
+This project is intentionally **frontend-first**:
 - No database
-- No authentication
+- No production authentication service
 - No external AI APIs
 - No NLP service
+- Optional lightweight websocket relay for live multi-device demos
 
 All behavior is implemented with:
 - React functional components
-- Local component/state logic
+- Local component/state logic with optional realtime event relay
 - Mock JSON-style seed data
 
 ## Core Prototype Behavior
@@ -100,10 +101,49 @@ npm i
 npm run dev
 ```
 
-3. Build for production (optional)
+3. Start websocket relay server (for realtime collaboration demos)
+```bash
+npm run ws:server
+```
+
+4. Build for production (optional)
 ```bash
 npm run build
 ```
+
+## Realtime Demo Setup (Two Devices)
+
+The realtime layer is room-based (`demo-room`) and keeps in-memory shared state only.
+
+### 1) Configure websocket URL for frontend
+Create `.env.local`:
+```env
+VITE_WS_URL=ws://<SERVER_IP>:8080
+```
+
+For ngrok:
+```env
+VITE_WS_URL=wss://<your-ngrok-domain>.ngrok-free.dev
+```
+
+### 2) Run relay server on host machine
+```bash
+npm run ws:server
+```
+
+### 3) Expose relay with ngrok (if off-LAN)
+```bash
+ngrok http 8080
+```
+
+### 4) Run frontend on each device
+- Open the app on Device A and Device B
+- Sign in and enter `/app`
+- Both clients will join the same shared room and sync:
+  - message creation
+  - message assignment
+  - node creation
+  - workspace reset
 
 ## Suggested Demo Flow
 

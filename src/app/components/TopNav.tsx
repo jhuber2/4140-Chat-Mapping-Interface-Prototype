@@ -2,10 +2,13 @@ type TopNavProps = {
   currentView: 'chat' | 'map' | 'operator';
   onChangeView: (view: 'chat' | 'map' | 'operator') => void;
   sessionLabel: string;
+  realtimeStatus: 'connecting' | 'connected' | 'disconnected';
   onLogout: () => void;
 };
 
-export function TopNav({ currentView, onChangeView, sessionLabel, onLogout }: TopNavProps) {
+export function TopNav({ currentView, onChangeView, sessionLabel, realtimeStatus, onLogout }: TopNavProps) {
+  const connectionLabel = realtimeStatus === 'connected' ? 'Connected' : realtimeStatus === 'connecting' ? 'Connecting' : 'Disconnected';
+
   return (
     <header className="top-nav">
       <div className="nav-left-cluster">
@@ -18,6 +21,9 @@ export function TopNav({ currentView, onChangeView, sessionLabel, onLogout }: To
             </span>
           </>
         ) : null}
+        <span className={`nav-connection-status ${realtimeStatus}`} title={`Realtime: ${connectionLabel}`}>
+          {connectionLabel}
+        </span>
       </div>
       <div className="nav-right">
         <button className={`nav-tab ${currentView === 'chat' ? 'active' : ''}`} onClick={() => onChangeView('chat')}>
