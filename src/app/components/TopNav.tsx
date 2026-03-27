@@ -42,7 +42,15 @@ export function TopNav({ currentView, onChangeView, sessionLabel, realtimeStatus
         <button className={`nav-tab ${currentView === 'map' ? 'active' : ''}`} onClick={() => onChangeView('map')}>
           Map View
         </button>
-        <button className={`nav-tab ${currentView === 'operator' ? 'active' : ''}`} onClick={() => onChangeView('operator')}>
+      </div>
+      <div className="nav-center">
+        <button
+          type="button"
+          className={`nav-tab nav-tab-facilitator-hidden ${currentView === 'operator' ? 'active' : ''}`}
+          onClick={() => onChangeView('operator')}
+          aria-label="Facilitator"
+          title="Facilitator"
+        >
           Facilitator
         </button>
       </div>

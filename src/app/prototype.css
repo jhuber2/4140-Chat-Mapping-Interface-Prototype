@@ -128,16 +128,26 @@ body {
 .top-nav {
   height: 64px;
   padding: 0 22px 0 24px;
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
-  justify-content: space-between;
+  column-gap: 12px;
   border-bottom: 1px solid rgba(226, 232, 240, 0.95);
   background: rgba(255, 255, 255, 0.88);
   backdrop-filter: blur(10px);
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.7);
 }
 
+.nav-left-cluster {
+  justify-self: start;
+}
+
+.nav-center {
+  justify-self: center;
+}
+
 .nav-right {
+  justify-self: end;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -197,6 +207,28 @@ body {
   color: var(--primary-hover);
   background: var(--surface-primary-tint);
   border-color: var(--border-accent);
+}
+
+/* Invisible label but same hit target — matches nav bar background feel in light/dark */
+.nav-tab-facilitator-hidden {
+  color: transparent;
+  background: transparent;
+  border-color: transparent;
+  text-shadow: none;
+  user-select: none;
+}
+
+.nav-tab-facilitator-hidden:hover,
+.nav-tab-facilitator-hidden:focus-visible {
+  color: transparent;
+  background: transparent;
+  border-color: transparent;
+}
+
+.nav-tab-facilitator-hidden.nav-tab.active {
+  color: transparent;
+  background: transparent;
+  border-color: transparent;
 }
 
 .main-content {
@@ -831,6 +863,12 @@ body {
   box-shadow: 0 2px 6px rgba(59, 130, 246, 0.08);
 }
 
+.chat-row.self.highlighted .chat-body {
+  background: #fff4d6;
+  border-color: #fcd34d;
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.28), 0 2px 6px rgba(59, 130, 246, 0.12);
+}
+
 .chat-meta {
   display: flex;
   flex-wrap: wrap;
@@ -1117,6 +1155,15 @@ body {
   border-color: #3b82f6;
 }
 
+.dark .nav-tab-facilitator-hidden,
+.dark .nav-tab-facilitator-hidden:hover,
+.dark .nav-tab-facilitator-hidden:focus-visible,
+.dark .nav-tab-facilitator-hidden.nav-tab.active {
+  color: transparent;
+  background: transparent;
+  border-color: transparent;
+}
+
 .dark .map-workspace,
 .dark .chat-view,
 .dark .chat-view-header,
@@ -1253,6 +1300,12 @@ body {
 .dark .chat-row.self .chat-body {
   background: #262626;
   border-color: #60a5fa;
+}
+
+.dark .chat-row.self.highlighted .chat-body {
+  background: #3a2c16;
+  border-color: #d97706;
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.35), 0 2px 8px rgba(0, 0, 0, 0.35);
 }
 
 .dark .chat-row.self .chat-sender,
@@ -1600,6 +1653,65 @@ body {
 .operator-create {
   display: grid;
   gap: 7px;
+}
+
+.create-topic-picker-form {
+  display: grid;
+  gap: 12px;
+}
+
+.create-topic-title-label {
+  display: grid;
+  gap: 6px;
+}
+
+.create-topic-title-label .muted {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.create-topic-parent-block {
+  display: grid;
+  gap: 6px;
+}
+
+.create-topic-parent-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+/* Topic Reference–style shell: one bordered box for the parent picker (no double border on inner columns) */
+.create-topic-parent-shell {
+  padding: 8px;
+  max-height: 240px;
+  overflow: auto;
+}
+
+.create-topic-parent-shell .node-columns {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  max-height: none;
+}
+
+.create-topic-parent-shell .node-breadcrumb {
+  margin-bottom: 8px;
+}
+
+.create-topic-title-input {
+  width: 100%;
+  padding: 8px 10px;
+  font-size: 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-primary);
+}
+
+.create-topic-submit {
+  width: fit-content;
 }
 
 .assignment-open-button {
@@ -2074,12 +2186,12 @@ body {
 
 @media (max-width: 1080px) {
   .top-nav {
-    flex-wrap: wrap;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
     height: auto;
     min-height: 64px;
     padding-top: 10px;
     padding-bottom: 10px;
-    gap: 10px;
+    row-gap: 8px;
   }
 
   .nav-left-cluster {
@@ -2088,7 +2200,6 @@ body {
   }
 
   .nav-right {
-    width: 100%;
     justify-content: flex-end;
   }
 
