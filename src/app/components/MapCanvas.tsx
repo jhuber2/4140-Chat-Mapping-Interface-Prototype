@@ -216,6 +216,13 @@ export function MapCanvas({
     didInitialCenterRef.current = true;
   }, [positions, visibleNodes]);
 
+  useEffect(() => {
+    if (!didInitialCenterRef.current) return;
+    const rect = viewportRef.current?.getBoundingClientRect();
+    if (!rect || rect.width <= 0 || rect.height <= 0 || visibleNodes.length === 0) return;
+    setViewport(centerVisibleNodes(rect.width, rect.height, visibleNodes, positions, DEFAULT_SCALE));
+  }, [expandedNodeIds, selectedNodeId, visibleNodes, positions]);
+
   return (
     <div className="map-workspace">
       <div className="map-toolbar">
