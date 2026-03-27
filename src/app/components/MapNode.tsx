@@ -13,7 +13,7 @@ type MapNodeProps = {
 };
 
 export function MapNode({ node, x, y, isSelected, isPath, isHighlighted, isDimmed, isNeutral, onClick }: MapNodeProps) {
-  const stateClass = isNeutral ? 'neutral' : isSelected ? 'selected' : isPath ? 'path' : isHighlighted ? 'highlighted' : isDimmed ? 'dimmed' : '';
+  const stateClass = isNeutral ? 'neutral' : isHighlighted ? 'highlighted' : isSelected ? 'selected' : isPath ? 'path' : isDimmed ? 'dimmed' : '';
 
   return (
     <button

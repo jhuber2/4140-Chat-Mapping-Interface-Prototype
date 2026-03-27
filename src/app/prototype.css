@@ -469,7 +469,7 @@ body {
 }
 
 .connector.active.highlighted {
-  stroke: var(--primary);
+  stroke: var(--warning);
   stroke-width: 2.2;
 }
 

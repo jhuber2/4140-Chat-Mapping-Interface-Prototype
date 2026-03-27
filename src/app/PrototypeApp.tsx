@@ -237,9 +237,17 @@ export default function PrototypeApp() {
   const applySelectionState = (nodeId: string, options?: { forceExpandTarget?: boolean }) => {
     const node = nodeById.get(nodeId);
     if (!node) return;
+    const ancestorIds = getPathToRoot(nodeId, enrichedNodes).slice(0, -1);
 
     setExpandedNodeIds((current) => {
+      if (options?.forceExpandTarget) {
+        const next = new Set<string>(ancestorIds);
+        if (node.childrenIds.length > 0) next.add(nodeId);
+        return next;
+      }
+
       const next = new Set(current);
+      ancestorIds.forEach((ancestorId) => next.add(ancestorId));
       const siblingIds = node.parentId ? nodeById.get(node.parentId)?.childrenIds ?? [] : [];
       siblingIds.forEach((siblingId) => {
         if (siblingId === nodeId) return;
