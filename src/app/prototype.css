@@ -147,6 +147,10 @@ body {
   height: 100%;
 }
 
+.map-view-layout.no-detail-panel {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .map-workspace {
   min-width: 0;
   display: flex;
@@ -544,10 +548,17 @@ body {
 }
 
 .detail-panel {
-  padding: 20px;
-  height: fit-content;
+  padding: 16px;
+  height: 100%;
   max-height: 100%;
   overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.detail-panel-card {
+  padding: 4px 4px 0;
 }
 
 .detail-panel.empty h3 {
@@ -612,11 +623,43 @@ body {
 }
 
 .supporting-button {
-  margin-top: 16px;
+  margin-top: 0;
   font-size: 13px;
   font-weight: 600;
-  width: 100%;
-  padding: 10px;
+  width: fit-content;
+  padding: 8px 12px;
+  background: #eff6ff;
+  color: #2563eb;
+  border: 1px solid #bfdbfe;
+  box-shadow: none;
+}
+
+.detail-messages-section {
+  display: grid;
+  gap: 10px;
+  padding-top: 2px;
+}
+
+.detail-message-item {
+  display: flex;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface-muted);
+}
+
+.detail-message-body {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.detail-message-item .modal-jump-button {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
 }
 
 .chat-view {
@@ -1401,31 +1444,41 @@ body {
 .landing-page .landing-inner {
   position: relative;
   z-index: 1;
-  max-width: 560px;
+  max-width: 540px;
   text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
 }
 
-.landing-eyebrow {
-  margin: 0 0 12px;
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.14em;
-  color: var(--secondary-accent);
+.landing-graph {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  width: min(720px, 88vw);
+  transform: translate(-50%, -50%);
+  stroke: rgba(59, 130, 246, 0.09);
+  fill: rgba(59, 130, 246, 0.05);
+  stroke-width: 1.5;
+  pointer-events: none;
 }
 
 .landing-title {
-  margin: 0 0 16px;
-  font-size: clamp(2rem, 4vw, 2.75rem);
-  font-weight: 600;
-  color: var(--text-primary);
-  line-height: 1.15;
+  margin: 0;
+  font-size: clamp(2.8rem, 7vw, 4.4rem);
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  color: #0f172a;
+  line-height: 1;
 }
 
 .landing-lead {
-  margin: 0 0 28px;
-  font-size: 17px;
-  line-height: 1.55;
-  color: var(--text-secondary);
+  margin: 0;
+  max-width: 500px;
+  font-size: 1.08rem;
+  line-height: 1.5;
+  color: #475569;
+  text-wrap: balance;
 }
 
 .landing-actions {
@@ -1433,7 +1486,7 @@ body {
   flex-wrap: wrap;
   gap: 12px;
   justify-content: center;
-  margin-bottom: 22px;
+  margin: 6px 0 0;
 }
 
 .btn-primary-lg,
@@ -1449,10 +1502,14 @@ body {
   cursor: pointer;
 }
 
-.landing-footnote {
-  margin: 0;
-  font-size: 12px;
-  color: var(--text-muted);
+.btn-primary-lg {
+  background: #3b82f6;
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+}
+
+.btn-primary-lg:hover {
+  background: #2563eb;
 }
 
 .login-page-inner {

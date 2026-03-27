@@ -3,7 +3,7 @@
 export const initialNodes: MapNodeData[] = [
   {
     id: '0',
-    title: 'Project Conversation',
+    title: 'Team 3 CPSC 4140',
     parentId: null,
     summary: 'Semester project chat organized into semantic topic clusters.',
     metadata: {},

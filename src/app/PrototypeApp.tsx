@@ -4,7 +4,6 @@ import { useAuth } from './AuthContext';
 import { ChatView } from './components/ChatView';
 import { MapView } from './components/MapView';
 import { OperatorView } from './components/OperatorView';
-import { SupportingMessagesModal } from './components/SupportingMessagesModal';
 import { TopNav } from './components/TopNav';
 import { deriveNodesWithMessageData, getPathToRoot, searchNodeContexts } from './mapUtils';
 import { initialExpandedNodeIds, initialMessages, initialNodes } from './mockData';
@@ -145,7 +144,7 @@ export default function PrototypeApp() {
   const [expandedNodeIds, setExpandedNodeIds] = useState<Set<string>>(new Set(initialExpandedNodeIds));
   const [hasEnteredMapView, setHasEnteredMapView] = useState(false);
   const [hasInteractedWithMap, setHasInteractedWithMap] = useState(false);
-  const [supportingOpen, setSupportingOpen] = useState(false);
+  const [detailMessagesEnabled, setDetailMessagesEnabled] = useState(true);
   const [draft, setDraft] = useState('');
   const [focusMessageId, setFocusMessageId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -196,7 +195,6 @@ export default function PrototypeApp() {
         setExpandedNodeIds(new Set(initialExpandedNodeIds));
         setHasEnteredMapView(false);
         setHasInteractedWithMap(false);
-        setSupportingOpen(false);
         setFocusMessageId(null);
         setSearchQuery('');
         setSearchResults([]);
@@ -375,7 +373,6 @@ export default function PrototypeApp() {
     setExpandedNodeIds(new Set(initialExpandedNodeIds));
     setHasEnteredMapView(false);
     setHasInteractedWithMap(false);
-    setSupportingOpen(false);
     setFocusMessageId(null);
     setSearchQuery('');
     setSearchResults([]);
@@ -445,12 +442,20 @@ export default function PrototypeApp() {
             breadcrumbNodeIds={breadcrumbNodeIds}
             searchQuery={searchQuery}
             searchResults={searchResults}
+            messages={supportingMessages}
+            messagesVisible={detailMessagesEnabled && supportingMessages.length > 0}
+            senderColorByName={senderColorByName}
             onSelectNode={handleSelectNode}
-            onOpenSupporting={() => setSupportingOpen(true)}
+            onToggleMessages={() => setDetailMessagesEnabled((current) => !current)}
             onSearchChange={setSearchQuery}
             onClearSearch={() => setSearchQuery('')}
             onResultSelect={(nodeId) => applySelectionState(nodeId, { forceExpandTarget: true })}
             onBreadcrumbSelect={(nodeId) => applySelectionState(nodeId, { forceExpandTarget: true })}
+            onViewInChat={(messageId) => {
+              setFocusMessageId(messageId);
+              setChatEntryIntent('focus');
+              setCurrentView('chat');
+            }}
           />
         ) : (
           <OperatorView
@@ -465,20 +470,6 @@ export default function PrototypeApp() {
           />
         )}
       </main>
-
-      <SupportingMessagesModal
-        isOpen={supportingOpen}
-        title={selectedNode?.title ?? 'Topic'}
-        messages={supportingMessages}
-        onClose={() => setSupportingOpen(false)}
-        senderColorByName={senderColorByName}
-        onViewInChat={(messageId) => {
-          setFocusMessageId(messageId);
-          setChatEntryIntent('focus');
-          setSupportingOpen(false);
-          setCurrentView('chat');
-        }}
-      />
     </div>
   );
 }
