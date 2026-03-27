@@ -181,19 +181,14 @@ export function MapCanvas({
       return;
     }
 
-    const rect = viewportRef.current?.getBoundingClientRect();
-    if (!rect) return;
-
     const scaleDelta = event.deltaY < 0 ? 1.06 : 0.94;
     setViewport((current) => {
       const nextScale = Math.max(0.72, Math.min(1.45, current.scale * scaleDelta));
-      const pointerX = event.clientX - rect.left;
-      const pointerY = event.clientY - rect.top;
-      const worldX = (pointerX - current.x) / current.scale;
-      const worldY = (pointerY - current.y) / current.scale;
-      const nextX = pointerX - worldX * nextScale;
-      const nextY = pointerY - worldY * nextScale;
-      return { x: nextX, y: nextY, scale: nextScale };
+      const rect = viewportRef.current?.getBoundingClientRect();
+      if (!rect || rect.width <= 0 || rect.height <= 0 || visibleNodes.length === 0) {
+        return { ...current, scale: nextScale };
+      }
+      return centerVisibleNodes(rect.width, rect.height, visibleNodes, positions, nextScale);
     });
   };
 
@@ -220,14 +215,44 @@ export function MapCanvas({
     if (!didInitialCenterRef.current) return;
     const rect = viewportRef.current?.getBoundingClientRect();
     if (!rect || rect.width <= 0 || rect.height <= 0 || visibleNodes.length === 0) return;
-    setViewport(centerVisibleNodes(rect.width, rect.height, visibleNodes, positions, DEFAULT_SCALE));
+    setViewport((current) => centerVisibleNodes(rect.width, rect.height, visibleNodes, positions, current.scale));
   }, [expandedNodeIds, selectedNodeId, visibleNodes, positions]);
 
   return (
     <div className="map-workspace">
       <div className="map-toolbar">
-        <button type="button" aria-label="Zoom in" onClick={() => setViewport((current) => ({ ...current, scale: Math.min(current.scale + 0.08, 1.45) }))}>+</button>
-        <button type="button" aria-label="Zoom out" onClick={() => setViewport((current) => ({ ...current, scale: Math.max(current.scale - 0.08, 0.72) }))}>-</button>
+        <button
+          type="button"
+          aria-label="Zoom in"
+          onClick={() =>
+            setViewport((current) => {
+              const nextScale = Math.min(current.scale + 0.08, 1.45);
+              const rect = viewportRef.current?.getBoundingClientRect();
+              if (!rect || rect.width <= 0 || rect.height <= 0 || visibleNodes.length === 0) {
+                return { ...current, scale: nextScale };
+              }
+              return centerVisibleNodes(rect.width, rect.height, visibleNodes, positions, nextScale);
+            })
+          }
+        >
+          +
+        </button>
+        <button
+          type="button"
+          aria-label="Zoom out"
+          onClick={() =>
+            setViewport((current) => {
+              const nextScale = Math.max(current.scale - 0.08, 0.72);
+              const rect = viewportRef.current?.getBoundingClientRect();
+              if (!rect || rect.width <= 0 || rect.height <= 0 || visibleNodes.length === 0) {
+                return { ...current, scale: nextScale };
+              }
+              return centerVisibleNodes(rect.width, rect.height, visibleNodes, positions, nextScale);
+            })
+          }
+        >
+          -
+        </button>
         <button onClick={resetViewportForRoot}>Reset View</button>
         <span>{Math.round(viewport.scale * 100)}%</span>
       </div>
