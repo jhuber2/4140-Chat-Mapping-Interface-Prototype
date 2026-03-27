@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useReducer, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from './AuthContext';
 import { ChatView } from './components/ChatView';
@@ -11,6 +11,19 @@ import { initialExpandedNodeIds, initialMessages, initialNodes } from './mockDat
 import { routeMessageToNode } from './routingLogic';
 import { AssignmentLog, MapNodeData, Message } from './types';
 import type { NodeSearchResult } from './mapUtils';
+import type { WorkspaceEvent, WorkspaceSnapshot } from './realtime/protocol';
+import { useRealtimeWorkspace } from './realtime/useRealtimeWorkspace';
+
+type WorkspaceState = {
+  messages: Message[];
+  nodes: MapNodeData[];
+  assignmentLog: AssignmentLog[];
+  unassignedMessageIds: string[];
+};
+
+type WorkspaceAction =
+  | { type: 'apply-event'; event: WorkspaceEvent }
+  | { type: 'hydrate-snapshot'; snapshot: WorkspaceSnapshot };
 
 function timestampNow() {
   const now = new Date();
@@ -28,47 +41,171 @@ function cloneSeedMessages() {
   return initialMessages.map((message) => ({ ...message, nodeIds: [...message.nodeIds] }));
 }
 
+function createInitialWorkspaceState(): WorkspaceState {
+  return {
+    messages: cloneSeedMessages(),
+    nodes: cloneSeedNodes(),
+    assignmentLog: [],
+    unassignedMessageIds: [],
+  };
+}
+
+function workspaceSnapshotFromState(state: WorkspaceState): WorkspaceSnapshot {
+  return {
+    messages: state.messages,
+    nodes: state.nodes,
+    assignmentLog: state.assignmentLog,
+    unassignedMessageIds: state.unassignedMessageIds,
+  };
+}
+
+function workspaceReducer(state: WorkspaceState, action: WorkspaceAction): WorkspaceState {
+  if (action.type === 'hydrate-snapshot') {
+    return {
+      messages: action.snapshot.messages.map((message) => ({ ...message, nodeIds: [...message.nodeIds] })),
+      nodes: action.snapshot.nodes.map((node) => ({
+        ...node,
+        metadata: { ...node.metadata },
+        decisions: node.decisions ? [...node.decisions] : undefined,
+        supportingMessageIds: [...node.supportingMessageIds],
+        childrenIds: [...node.childrenIds],
+      })),
+      assignmentLog: action.snapshot.assignmentLog.map((log) => ({ ...log })),
+      unassignedMessageIds: [...action.snapshot.unassignedMessageIds],
+    };
+  }
+
+  const event = action.event;
+
+  if (event.type === 'chat.message.created') {
+    const nextMessage = event.payload.message;
+    const autoNode = nextMessage.nodeIds[0] ?? null;
+    const isUnassigned = !autoNode;
+    return {
+      ...state,
+      messages: state.messages.concat(nextMessage),
+      unassignedMessageIds: isUnassigned ? [nextMessage.id, ...state.unassignedMessageIds] : state.unassignedMessageIds.filter((id) => id !== nextMessage.id),
+      assignmentLog: [
+        {
+          messageId: nextMessage.id,
+          nodeId: autoNode,
+          mode: isUnassigned ? 'unassigned' : 'auto',
+          at: nextMessage.timestamp,
+        },
+        ...state.assignmentLog,
+      ],
+    };
+  }
+
+  if (event.type === 'message.assigned') {
+    return {
+      ...state,
+      messages: state.messages.map((message) =>
+        message.id === event.payload.messageId
+          ? {
+              ...message,
+              nodeIds: [event.payload.nodeId],
+              assignedManually: true,
+              autoMapped: false,
+            }
+          : message
+      ),
+      unassignedMessageIds: state.unassignedMessageIds.filter((id) => id !== event.payload.messageId),
+      assignmentLog: [{ messageId: event.payload.messageId, nodeId: event.payload.nodeId, mode: 'manual', at: event.payload.at }, ...state.assignmentLog],
+    };
+  }
+
+  if (event.type === 'node.created') {
+    return {
+      ...state,
+      nodes: state.nodes.map((node) => (node.id === event.payload.parentId ? { ...node, childrenIds: [...node.childrenIds, event.payload.node.id] } : node)).concat(event.payload.node),
+    };
+  }
+
+  return workspaceReducer(state, { type: 'hydrate-snapshot', snapshot: event.payload.snapshot });
+}
+
+function createEventMeta(userId: string, displayName: string, roomId: string) {
+  return {
+    eventId: `${userId}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    roomId,
+    timestamp: new Date().toISOString(),
+    userId,
+    displayName,
+  };
+}
+
 export default function PrototypeApp() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [currentView, setCurrentView] = useState<'chat' | 'map' | 'operator'>('chat');
   const [chatEntryIntent, setChatEntryIntent] = useState<'startup' | 'tab' | 'focus' | null>('startup');
-  const [messages, setMessages] = useState<Message[]>(() => cloneSeedMessages());
-  const [nodes, setNodes] = useState<MapNodeData[]>(() => cloneSeedNodes());
+  const [workspace, dispatchWorkspace] = useReducer(workspaceReducer, undefined, createInitialWorkspaceState);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [expandedNodeIds, setExpandedNodeIds] = useState<Set<string>>(new Set(initialExpandedNodeIds));
   const [hasEnteredMapView, setHasEnteredMapView] = useState(false);
   const [hasInteractedWithMap, setHasInteractedWithMap] = useState(false);
   const [supportingOpen, setSupportingOpen] = useState(false);
   const [draft, setDraft] = useState('');
-  const [assignmentLog, setAssignmentLog] = useState<AssignmentLog[]>([]);
-  const [unassignedMessageIds, setUnassignedMessageIds] = useState<string[]>([]);
   const [focusMessageId, setFocusMessageId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<NodeSearchResult[]>([]);
   const selfSenderLabel = useMemo(() => (user?.displayName ? user.displayName.split(' ')[0] : 'You'), [user?.displayName]);
+  const roomId = 'demo-room';
+  const wsUrl = import.meta.env.VITE_WS_URL as string | undefined;
 
-  const enrichedNodes = useMemo(() => deriveNodesWithMessageData(nodes, messages), [nodes, messages]);
+  const enrichedNodes = useMemo(() => deriveNodesWithMessageData(workspace.nodes, workspace.messages), [workspace.nodes, workspace.messages]);
   const nodeById = useMemo(() => new Map(enrichedNodes.map((node) => [node.id, node])), [enrichedNodes]);
   const breadcrumbNodeIds = useMemo(() => (selectedNodeId ? getPathToRoot(selectedNodeId, enrichedNodes) : []), [selectedNodeId, enrichedNodes]);
   const highlightedNodeIds = useMemo(() => {
     if (!searchQuery.trim()) return new Set<string>();
-
     const highlightedIds = new Set<string>();
     searchResults.forEach((result) => {
       getPathToRoot(result.nodeId, enrichedNodes).forEach((nodeId) => highlightedIds.add(nodeId));
     });
     return highlightedIds;
   }, [searchQuery, searchResults, enrichedNodes]);
+
   const senderColorByName = useMemo(() => {
     const palette = ['#28a745', '#2f6bff', '#aa5eff', '#d93f7a', '#00a6b2', '#ef4444', '#6d28d9', '#0ea5e9', '#84cc16', '#f59e0b', '#14b8a6', '#e11d48'];
     const map = new Map<string, string>();
-    messages.forEach((message) => {
+    workspace.messages.forEach((message) => {
       if (map.has(message.sender)) return;
       map.set(message.sender, palette[map.size % palette.length]);
     });
     return map;
-  }, [messages]);
+  }, [workspace.messages]);
+
+  const applyWorkspaceEvent = useCallback((event: WorkspaceEvent) => {
+    dispatchWorkspace({ type: 'apply-event', event });
+  }, []);
+
+  const { status: realtimeStatus, publishEvent } = useRealtimeWorkspace({
+    wsUrl,
+    roomId,
+    userId: user?.userId ?? 'guest',
+    displayName: user?.displayName ?? 'Guest',
+    bootstrapSnapshot: workspaceSnapshotFromState(workspace),
+    onSnapshot: (snapshot) => {
+      dispatchWorkspace({ type: 'hydrate-snapshot', snapshot });
+    },
+    onRemoteEvent: (event) => {
+      applyWorkspaceEvent(event);
+      if (event.type === 'workspace.reset') {
+        setSelectedNodeId(null);
+        setExpandedNodeIds(new Set(initialExpandedNodeIds));
+        setHasEnteredMapView(false);
+        setHasInteractedWithMap(false);
+        setSupportingOpen(false);
+        setFocusMessageId(null);
+        setSearchQuery('');
+        setSearchResults([]);
+      }
+      if (event.type === 'node.created') {
+        setExpandedNodeIds((current) => new Set(current).add(event.payload.parentId));
+      }
+    },
+  });
 
   const expandParentPath = (nodeId: string) => {
     setExpandedNodeIds((current) => {
@@ -96,15 +233,6 @@ export default function PrototypeApp() {
     }
     return descendants;
   };
-
-  useEffect(() => {
-    if (!searchQuery.trim()) {
-      setSearchResults([]);
-      return;
-    }
-
-    setSearchResults(searchNodeContexts(searchQuery, enrichedNodes, messages).slice(0, 8));
-  }, [searchQuery, enrichedNodes, messages]);
 
   const applySelectionState = (nodeId: string, options?: { forceExpandTarget?: boolean }) => {
     const node = nodeById.get(nodeId);
@@ -137,9 +265,15 @@ export default function PrototypeApp() {
     setSelectedNodeId(nodeId);
   };
 
+  const sendWorkspaceEvent = (event: WorkspaceEvent) => {
+    applyWorkspaceEvent(event);
+    publishEvent(event);
+  };
+
   const sendMessage = () => {
     const text = draft.trim();
     if (!text) return;
+    if (!user) return;
 
     const now = timestampNow();
     const id = `msg-${Date.now()}`;
@@ -157,19 +291,19 @@ export default function PrototypeApp() {
       assignedManually: false,
     };
 
-    setMessages((current) => [...current, nextMessage]);
+    const event: WorkspaceEvent = {
+      ...createEventMeta(user.userId, user.displayName, roomId),
+      type: 'chat.message.created',
+      payload: { message: nextMessage },
+    };
+
+    sendWorkspaceEvent(event);
     setDraft('');
 
-    if (!autoNode) {
-      setUnassignedMessageIds((current) => [id, ...current]);
-      setAssignmentLog((current) => [{ messageId: id, nodeId: null, mode: 'unassigned', at: now }, ...current]);
-      return;
+    if (autoNode) {
+      expandParentPath(autoNode);
+      setSelectedNodeId(autoNode);
     }
-
-    setUnassignedMessageIds((current) => current.filter((messageId) => messageId !== id));
-    expandParentPath(autoNode);
-    setSelectedNodeId(autoNode);
-    setAssignmentLog((current) => [{ messageId: id, nodeId: autoNode, mode: 'auto', at: now }, ...current]);
   };
 
   const handleSelectNode = (nodeId: string) => {
@@ -178,28 +312,20 @@ export default function PrototypeApp() {
   };
 
   const manuallyAssignMessage = (messageId: string, nodeId: string) => {
+    if (!user) return;
     const now = timestampNow();
-
-    setMessages((current) =>
-      current.map((message) =>
-        message.id === messageId
-          ? {
-              ...message,
-              nodeIds: [nodeId],
-              assignedManually: true,
-              autoMapped: false,
-            }
-          : message
-      )
-    );
-
-    setUnassignedMessageIds((current) => current.filter((id) => id !== messageId));
+    const event: WorkspaceEvent = {
+      ...createEventMeta(user.userId, user.displayName, roomId),
+      type: 'message.assigned',
+      payload: { messageId, nodeId, at: now },
+    };
+    sendWorkspaceEvent(event);
     setSelectedNodeId(nodeId);
     expandParentPath(nodeId);
-    setAssignmentLog((current) => [{ messageId, nodeId, mode: 'manual', at: now }, ...current]);
   };
 
   const createNode = (title: string, parentId: string) => {
+    if (!user) return;
     const parent = nodeById.get(parentId);
     if (!parent) return;
 
@@ -215,15 +341,28 @@ export default function PrototypeApp() {
       depth: Math.min(parent.depth + 1, 3),
     };
 
-    setNodes((current) => current.map((node) => (node.id === parentId ? { ...node, childrenIds: [...node.childrenIds, id] } : node)).concat(newNode));
+    const event: WorkspaceEvent = {
+      ...createEventMeta(user.userId, user.displayName, roomId),
+      type: 'node.created',
+      payload: {
+        node: newNode,
+        parentId,
+      },
+    };
+
+    sendWorkspaceEvent(event);
     setExpandedNodeIds((current) => new Set(current).add(parentId));
   };
 
   const resetWorkspace = () => {
-    setMessages(cloneSeedMessages());
-    setNodes(cloneSeedNodes());
-    setAssignmentLog([]);
-    setUnassignedMessageIds([]);
+    if (!user) return;
+    const snapshot = workspaceSnapshotFromState(createInitialWorkspaceState());
+    const event: WorkspaceEvent = {
+      ...createEventMeta(user.userId, user.displayName, roomId),
+      type: 'workspace.reset',
+      payload: { snapshot },
+    };
+    sendWorkspaceEvent(event);
     setSelectedNodeId(null);
     setExpandedNodeIds(new Set(initialExpandedNodeIds));
     setHasEnteredMapView(false);
@@ -235,8 +374,8 @@ export default function PrototypeApp() {
   };
 
   const selectedNode = nodeById.get(selectedNodeId ?? '') ?? enrichedNodes[0];
-  const supportingMessages = messages.filter((message) => selectedNode?.supportingMessageIds.includes(message.id));
-  const unassignedMessages = messages.filter((message) => unassignedMessageIds.includes(message.id));
+  const supportingMessages = workspace.messages.filter((message) => selectedNode?.supportingMessageIds.includes(message.id));
+  const unassignedMessages = workspace.messages.filter((message) => workspace.unassignedMessageIds.includes(message.id));
 
   const handleChangeView = (view: 'chat' | 'map' | 'operator') => {
     if (view === 'chat') setChatEntryIntent('tab');
@@ -253,19 +392,28 @@ export default function PrototypeApp() {
     navigate('/login', { replace: true });
   };
 
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setSearchResults([]);
+      return;
+    }
+    setSearchResults(searchNodeContexts(searchQuery, enrichedNodes, workspace.messages).slice(0, 8));
+  }, [searchQuery, enrichedNodes, workspace.messages]);
+
   return (
     <div className="prototype-shell">
       <TopNav
         currentView={currentView}
         onChangeView={handleChangeView}
         sessionLabel={user?.displayName ?? ''}
+        realtimeStatus={wsUrl ? realtimeStatus : 'disconnected'}
         onLogout={handleLogout}
       />
 
       <main className="main-content">
         {currentView === 'chat' ? (
           <ChatView
-            messages={messages}
+            messages={workspace.messages}
             selfSenderLabel={selfSenderLabel}
             draft={draft}
             onDraftChange={setDraft}
@@ -298,10 +446,10 @@ export default function PrototypeApp() {
           />
         ) : (
           <OperatorView
-            messages={messages}
+            messages={workspace.messages}
             unassignedMessages={unassignedMessages}
             nodes={enrichedNodes}
-            assignmentLog={assignmentLog}
+            assignmentLog={workspace.assignmentLog}
             onAssign={manuallyAssignMessage}
             onCreateNode={createNode}
             onResetWorkspace={resetWorkspace}
