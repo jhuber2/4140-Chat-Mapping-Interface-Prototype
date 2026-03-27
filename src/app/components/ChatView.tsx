@@ -101,8 +101,8 @@ export function ChatView({
   return (
     <section className="chat-view">
       <div className="chat-view-header">
-        <h2>Group Project Chat</h2>
-        <p>{messages.length} messages in this session</p>
+        <h2>Team 3 CPSC 4140</h2>
+        <p>{messages.length} messages</p>
       </div>
       <div className="chat-thread" ref={threadRef}>
         {messages.map((message) => {

@@ -167,7 +167,7 @@ export default function PrototypeApp() {
   }, [searchQuery, searchResults, enrichedNodes]);
 
   const senderColorByName = useMemo(() => {
-    const palette = ['#28a745', '#2f6bff', '#aa5eff', '#d93f7a', '#00a6b2', '#ef4444', '#6d28d9', '#0ea5e9', '#84cc16', '#f59e0b', '#14b8a6', '#e11d48'];
+    const palette = ['#3b82f6', '#10b981', '#6366f1', '#f59e0b', '#ec4899', '#14b8a6', '#8b5cf6', '#0ea5e9', '#84cc16', '#f97316', '#06b6d4', '#e11d48'];
     const map = new Map<string, string>();
     workspace.messages.forEach((message) => {
       if (map.has(message.sender)) return;
@@ -450,6 +450,7 @@ export default function PrototypeApp() {
             unassignedMessages={unassignedMessages}
             nodes={enrichedNodes}
             assignmentLog={workspace.assignmentLog}
+            realtimeStatus={wsUrl ? realtimeStatus : 'disconnected'}
             onAssign={manuallyAssignMessage}
             onCreateNode={createNode}
             onResetWorkspace={resetWorkspace}

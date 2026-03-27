@@ -189,8 +189,8 @@ export function MapCanvas({
   return (
     <div className="map-workspace">
       <div className="map-toolbar">
-        <button onClick={() => setViewport((current) => ({ ...current, scale: Math.min(current.scale + 0.08, 1.45) }))}>+</button>
-        <button onClick={() => setViewport((current) => ({ ...current, scale: Math.max(current.scale - 0.08, 0.72) }))}>-</button>
+        <button type="button" aria-label="Zoom in" onClick={() => setViewport((current) => ({ ...current, scale: Math.min(current.scale + 0.08, 1.45) }))}>+</button>
+        <button type="button" aria-label="Zoom out" onClick={() => setViewport((current) => ({ ...current, scale: Math.max(current.scale - 0.08, 0.72) }))}>-</button>
         <button onClick={resetViewportForRoot}>Reset View</button>
         <span>{Math.round(viewport.scale * 100)}%</span>
       </div>

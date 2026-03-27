@@ -6,16 +6,18 @@ type OperatorViewProps = {
   unassignedMessages: Message[];
   nodes: MapNodeData[];
   assignmentLog: AssignmentLog[];
+  realtimeStatus: 'connecting' | 'connected' | 'disconnected';
   onAssign: (messageId: string, nodeId: string) => void;
   onCreateNode: (title: string, parentId: string) => void;
   onResetWorkspace: () => void;
 };
 
-export function OperatorView({ messages, unassignedMessages, nodes, assignmentLog, onAssign, onCreateNode, onResetWorkspace }: OperatorViewProps) {
+export function OperatorView({ messages, unassignedMessages, nodes, assignmentLog, realtimeStatus, onAssign, onCreateNode, onResetWorkspace }: OperatorViewProps) {
   const nodeById = useMemo(() => new Map(nodes.map((node) => [node.id, node])), [nodes]);
   const rootNodes = useMemo(() => nodes.filter((node) => !node.parentId), [nodes]);
   const [activePickerMessageId, setActivePickerMessageId] = useState<string | null>(null);
   const orderedMessages = useMemo(() => [...messages].reverse(), [messages]);
+  const connectionLabel = realtimeStatus === 'connected' ? 'Connected' : realtimeStatus === 'connecting' ? 'Connecting' : 'Disconnected';
 
   return (
     <section className="operator-view-layout">
@@ -23,6 +25,10 @@ export function OperatorView({ messages, unassignedMessages, nodes, assignmentLo
         <header className="operator-view-header">
           <h2>Facilitator</h2>
           <p>Review incoming messages and route each one to the right topic.</p>
+          <div className={`operator-connection-status ${realtimeStatus}`}>
+            <span className="operator-status-dot" aria-hidden="true" />
+            {connectionLabel}
+          </div>
         </header>
 
         <section className="operator-view-section">
