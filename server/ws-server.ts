@@ -1,6 +1,8 @@
 import { WebSocketServer, type WebSocket } from 'ws';
 import type { ClientToServerMessage, ServerToClientMessage, WorkspaceEvent, WorkspaceSnapshot } from '../src/app/realtime/protocol';
 import { isClientToServerMessage } from '../src/app/realtime/protocol';
+import { applyNodeDeletionSnapshot } from '../src/app/workspaceApplyNodeDelete';
+import { GENERAL_TOPIC_NODE_ID } from '../src/app/mockData';
 
 type RoomState = {
   snapshot: WorkspaceSnapshot | null;
@@ -60,6 +62,11 @@ function applyEventToSnapshot(current: WorkspaceSnapshot, event: WorkspaceEvent)
         .map((node) => (node.id === event.payload.parentId ? { ...node, childrenIds: [...node.childrenIds, event.payload.node.id] } : node))
         .concat(event.payload.node),
     };
+  }
+
+  if (event.type === 'node.deleted') {
+    const generalId = event.payload.generalNodeId ?? GENERAL_TOPIC_NODE_ID;
+    return applyNodeDeletionSnapshot(current, event.payload.nodeId, generalId);
   }
 
   return event.payload.snapshot;

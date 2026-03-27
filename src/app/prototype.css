@@ -128,26 +128,16 @@ body {
 .top-nav {
   height: 64px;
   padding: 0 22px 0 24px;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  display: flex;
   align-items: center;
-  column-gap: 12px;
+  justify-content: space-between;
   border-bottom: 1px solid rgba(226, 232, 240, 0.95);
   background: rgba(255, 255, 255, 0.88);
   backdrop-filter: blur(10px);
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.7);
 }
 
-.nav-left-cluster {
-  justify-self: start;
-}
-
-.nav-center {
-  justify-self: center;
-}
-
 .nav-right {
-  justify-self: end;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -207,28 +197,6 @@ body {
   color: var(--primary-hover);
   background: var(--surface-primary-tint);
   border-color: var(--border-accent);
-}
-
-/* Invisible label but same hit target — matches nav bar background feel in light/dark */
-.nav-tab-facilitator-hidden {
-  color: transparent;
-  background: transparent;
-  border-color: transparent;
-  text-shadow: none;
-  user-select: none;
-}
-
-.nav-tab-facilitator-hidden:hover,
-.nav-tab-facilitator-hidden:focus-visible {
-  color: transparent;
-  background: transparent;
-  border-color: transparent;
-}
-
-.nav-tab-facilitator-hidden.nav-tab.active {
-  color: transparent;
-  background: transparent;
-  border-color: transparent;
 }
 
 .main-content {
@@ -1155,15 +1123,6 @@ body {
   border-color: #3b82f6;
 }
 
-.dark .nav-tab-facilitator-hidden,
-.dark .nav-tab-facilitator-hidden:hover,
-.dark .nav-tab-facilitator-hidden:focus-visible,
-.dark .nav-tab-facilitator-hidden.nav-tab.active {
-  color: transparent;
-  background: transparent;
-  border-color: transparent;
-}
-
 .dark .map-workspace,
 .dark .chat-view,
 .dark .chat-view-header,
@@ -1714,6 +1673,22 @@ body {
   width: fit-content;
 }
 
+.delete-topic-picker .delete-topic-button {
+  background: var(--danger-soft);
+  color: var(--danger);
+  border: 1px solid rgba(220, 38, 38, 0.35);
+}
+
+.delete-topic-picker .delete-topic-button:hover:not(:disabled) {
+  background: var(--danger);
+  color: var(--text-inverse);
+  border-color: var(--danger);
+}
+
+.dark .delete-topic-picker .delete-topic-button {
+  border-color: rgba(248, 113, 113, 0.45);
+}
+
 .assignment-open-button {
   width: fit-content;
 }
@@ -2186,12 +2161,12 @@ body {
 
 @media (max-width: 1080px) {
   .top-nav {
-    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    flex-wrap: wrap;
     height: auto;
     min-height: 64px;
     padding-top: 10px;
     padding-bottom: 10px;
-    row-gap: 8px;
+    gap: 10px;
   }
 
   .nav-left-cluster {
@@ -2200,6 +2175,7 @@ body {
   }
 
   .nav-right {
+    width: 100%;
     justify-content: flex-end;
   }
 

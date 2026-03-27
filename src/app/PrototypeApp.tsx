@@ -6,8 +6,8 @@ import { MapView } from './components/MapView';
 import { OperatorView } from './components/OperatorView';
 import { TopNav } from './components/TopNav';
 import { deriveNodesWithMessageData, getPathToRoot, searchNodeContexts } from './mapUtils';
-import { initialExpandedNodeIds, initialMessages, initialNodes } from './mockData';
-import { routeMessageToNode } from './routingLogic';
+import { GENERAL_TOPIC_NODE_ID, initialExpandedNodeIds, initialMessages, initialNodes } from './mockData';
+import { applyNodeDeletionSnapshot, collectSubtreeIdsIncludingSelf } from './workspaceApplyNodeDelete';
 import { AssignmentLog, MapNodeData, Message } from './types';
 import type { NodeSearchResult } from './mapUtils';
 import type { WorkspaceEvent, WorkspaceSnapshot } from './realtime/protocol';
@@ -121,7 +121,28 @@ function workspaceReducer(state: WorkspaceState, action: WorkspaceAction): Works
     };
   }
 
-  return workspaceReducer(state, { type: 'hydrate-snapshot', snapshot: event.payload.snapshot });
+  if (event.type === 'node.deleted') {
+    const snap = workspaceSnapshotFromState(state);
+    const next = applyNodeDeletionSnapshot(snap, event.payload.nodeId, event.payload.generalNodeId);
+    return {
+      messages: next.messages.map((message) => ({ ...message, nodeIds: [...message.nodeIds] })),
+      nodes: next.nodes.map((node) => ({
+        ...node,
+        metadata: { ...node.metadata },
+        decisions: node.decisions ? [...node.decisions] : undefined,
+        supportingMessageIds: [...node.supportingMessageIds],
+        childrenIds: [...node.childrenIds],
+      })),
+      assignmentLog: state.assignmentLog,
+      unassignedMessageIds: [...next.unassignedMessageIds],
+    };
+  }
+
+  if (event.type === 'workspace.reset') {
+    return workspaceReducer(state, { type: 'hydrate-snapshot', snapshot: event.payload.snapshot });
+  }
+
+  return state;
 }
 
 function createEventMeta(userId: string, displayName: string, roomId: string) {
@@ -189,6 +210,17 @@ export default function PrototypeApp() {
       dispatchWorkspace({ type: 'hydrate-snapshot', snapshot });
     },
     onRemoteEvent: (event) => {
+      if (event.type === 'node.deleted') {
+        const deletedIds = collectSubtreeIdsIncludingSelf(event.payload.nodeId, workspace.nodes);
+        applyWorkspaceEvent(event);
+        setSelectedNodeId((current) => (current && deletedIds.has(current) ? null : current));
+        setExpandedNodeIds((prev) => {
+          const next = new Set(prev);
+          deletedIds.forEach((id) => next.delete(id));
+          return next;
+        });
+        return;
+      }
       applyWorkspaceEvent(event);
       if (event.type === 'workspace.reset') {
         setSelectedNodeId(null);
@@ -199,25 +231,8 @@ export default function PrototypeApp() {
         setSearchQuery('');
         setSearchResults([]);
       }
-      if (event.type === 'node.created') {
-        setExpandedNodeIds((current) => new Set(current).add(event.payload.parentId));
-      }
     },
   });
-
-  const expandParentPath = (nodeId: string) => {
-    setExpandedNodeIds((current) => {
-      const next = new Set(current);
-      let cursor = nodeId;
-      while (cursor) {
-        const node = nodeById.get(cursor);
-        if (!node?.parentId) break;
-        next.add(node.parentId);
-        cursor = node.parentId;
-      }
-      return next;
-    });
-  };
 
   const getDescendantIds = (nodeId: string) => {
     const descendants = new Set<string>();
@@ -283,8 +298,6 @@ export default function PrototypeApp() {
 
     const now = timestampNow();
     const id = `msg-${Date.now()}`;
-    const route = routeMessageToNode(text);
-    const autoNode = route.nodeId;
     const senderName = selfSenderLabel;
 
     const nextMessage: Message = {
@@ -292,8 +305,8 @@ export default function PrototypeApp() {
       sender: senderName,
       text,
       timestamp: now,
-      nodeIds: autoNode ? [autoNode] : [],
-      autoMapped: Boolean(autoNode),
+      nodeIds: [GENERAL_TOPIC_NODE_ID],
+      autoMapped: false,
       assignedManually: false,
     };
 
@@ -305,11 +318,6 @@ export default function PrototypeApp() {
 
     sendWorkspaceEvent(event);
     setDraft('');
-
-    if (autoNode) {
-      expandParentPath(autoNode);
-      setSelectedNodeId(autoNode);
-    }
   };
 
   const handleSelectNode = (nodeId: string) => {
@@ -326,8 +334,6 @@ export default function PrototypeApp() {
       payload: { messageId, nodeId, at: now },
     };
     sendWorkspaceEvent(event);
-    setSelectedNodeId(nodeId);
-    expandParentPath(nodeId);
   };
 
   const createNode = (title: string, parentId: string) => {
@@ -357,7 +363,24 @@ export default function PrototypeApp() {
     };
 
     sendWorkspaceEvent(event);
-    setExpandedNodeIds((current) => new Set(current).add(parentId));
+  };
+
+  const deleteNode = (nodeId: string) => {
+    if (!user) return;
+    if (nodeId === GENERAL_TOPIC_NODE_ID || nodeId === '0') return;
+    const deletedIds = collectSubtreeIdsIncludingSelf(nodeId, workspace.nodes);
+    const event: WorkspaceEvent = {
+      ...createEventMeta(user.userId, user.displayName, roomId),
+      type: 'node.deleted',
+      payload: { nodeId, generalNodeId: GENERAL_TOPIC_NODE_ID },
+    };
+    sendWorkspaceEvent(event);
+    setSelectedNodeId((current) => (current && deletedIds.has(current) ? null : current));
+    setExpandedNodeIds((prev) => {
+      const next = new Set(prev);
+      deletedIds.forEach((id) => next.delete(id));
+      return next;
+    });
   };
 
   const resetWorkspace = () => {
@@ -466,6 +489,7 @@ export default function PrototypeApp() {
             realtimeStatus={wsUrl ? realtimeStatus : 'disconnected'}
             onAssign={manuallyAssignMessage}
             onCreateNode={createNode}
+            onDeleteNode={deleteNode}
             onResetWorkspace={resetWorkspace}
           />
         )}

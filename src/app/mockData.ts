@@ -1,4 +1,4 @@
-﻿import { MapNodeData, Message } from './types';
+import { MapNodeData, Message } from './types';
 
 export const initialNodes: MapNodeData[] = [
   {
@@ -345,3 +345,9 @@ export const initialMessages: Message[] = [
 ];
 
 export const initialExpandedNodeIds = ['0'];
+
+/** Default "General" topic branch for unrouted or reassigned messages */
+export const GENERAL_TOPIC_NODE_ID = '5';
+
+/** Root team node — cannot be deleted */
+export const ROOT_TEAM_NODE_ID = '0';

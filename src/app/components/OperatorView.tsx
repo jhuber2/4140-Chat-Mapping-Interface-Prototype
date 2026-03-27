@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { AssignmentLog, MapNodeData, Message } from '../types';
 import { CreateTopicColumnPicker } from './CreateTopicColumnPicker';
+import { DeleteTopicColumnPicker } from './DeleteTopicColumnPicker';
 import { NodeFinderColumns, nodePath, useNodeFinderState } from './nodeFinder';
 
 type OperatorViewProps = {
@@ -11,10 +12,21 @@ type OperatorViewProps = {
   realtimeStatus: 'connecting' | 'connected' | 'disconnected';
   onAssign: (messageId: string, nodeId: string) => void;
   onCreateNode: (title: string, parentId: string) => void;
+  onDeleteNode: (nodeId: string) => void;
   onResetWorkspace: () => void;
 };
 
-export function OperatorView({ messages, unassignedMessages, nodes, assignmentLog, realtimeStatus, onAssign, onCreateNode, onResetWorkspace }: OperatorViewProps) {
+export function OperatorView({
+  messages,
+  unassignedMessages,
+  nodes,
+  assignmentLog,
+  realtimeStatus,
+  onAssign,
+  onCreateNode,
+  onDeleteNode,
+  onResetWorkspace,
+}: OperatorViewProps) {
   const nodeById = useMemo(() => new Map(nodes.map((node) => [node.id, node])), [nodes]);
   const rootNodes = useMemo(() => nodes.filter((node) => !node.parentId), [nodes]);
   const [activePickerMessageId, setActivePickerMessageId] = useState<string | null>(null);
@@ -76,6 +88,11 @@ export function OperatorView({ messages, unassignedMessages, nodes, assignmentLo
         <section className="operator-view-section">
           <h3>Create Topic</h3>
           <CreateTopicColumnPicker nodes={nodes} nodeById={nodeById} onCreateNode={onCreateNode} />
+        </section>
+
+        <section className="operator-view-section">
+          <h3>Delete Topic</h3>
+          <DeleteTopicColumnPicker nodes={nodes} nodeById={nodeById} onDeleteNode={onDeleteNode} />
         </section>
 
         <section className="operator-view-section">

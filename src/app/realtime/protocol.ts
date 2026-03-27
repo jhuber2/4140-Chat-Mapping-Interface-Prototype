@@ -9,7 +9,7 @@ export type WorkspaceSnapshot = {
 
 export type RealtimeConnectionStatus = 'connecting' | 'connected' | 'disconnected';
 
-export type WorkspaceEventType = 'chat.message.created' | 'message.assigned' | 'node.created' | 'workspace.reset';
+export type WorkspaceEventType = 'chat.message.created' | 'message.assigned' | 'node.created' | 'node.deleted' | 'workspace.reset';
 
 export type ChatMessageCreatedEvent = {
   eventId: string;
@@ -50,6 +50,19 @@ export type NodeCreatedEvent = {
   };
 };
 
+export type NodeDeletedEvent = {
+  eventId: string;
+  roomId: string;
+  timestamp: string;
+  userId: string;
+  displayName: string;
+  type: 'node.deleted';
+  payload: {
+    nodeId: string;
+    generalNodeId: string;
+  };
+};
+
 export type WorkspaceResetEvent = {
   eventId: string;
   roomId: string;
@@ -66,6 +79,7 @@ export type WorkspaceEvent =
   | ChatMessageCreatedEvent
   | MessageAssignedEvent
   | NodeCreatedEvent
+  | NodeDeletedEvent
   | WorkspaceResetEvent;
 
 export type ClientToServerMessage =
