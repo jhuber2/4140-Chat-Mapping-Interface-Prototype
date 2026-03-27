@@ -1,8 +1,10 @@
 import { Link } from 'react-router';
+import { ThemeToggle } from './ThemeToggle';
 
 export function LandingPage() {
   return (
     <div className="auth-shell landing-page">
+      <ThemeToggle className="theme-toggle-floating" />
       <div className="auth-backdrop" aria-hidden />
       <svg className="landing-graph" viewBox="0 0 800 520" aria-hidden="true">
         <path d="M120 170C190 120 260 120 320 170S450 245 520 208 650 145 720 188" />

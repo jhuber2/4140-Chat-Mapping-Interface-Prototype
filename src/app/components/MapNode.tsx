@@ -1,4 +1,4 @@
-﻿import { MapNodeData } from '../types';
+import { MapNodeData } from '../types';
 
 type MapNodeProps = {
   node: MapNodeData;
@@ -18,6 +18,7 @@ export function MapNode({ node, x, y, isSelected, isPath, isHighlighted, isDimme
   return (
     <button
       className={`map-node depth-${node.depth} ${stateClass}`}
+      data-node-id={node.id}
       style={{ left: x, top: y }}
       onClick={() => onClick(node.id)}
     >

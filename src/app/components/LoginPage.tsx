@@ -1,6 +1,7 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { useAuth } from '../AuthContext';
+import { ThemeToggle } from './ThemeToggle';
 
 export function LoginPage() {
   const { user, loginWithCredentials } = useAuth();
@@ -26,30 +27,10 @@ export function LoginPage() {
 
   return (
     <div className="auth-shell login-page">
+      <ThemeToggle className="theme-toggle-floating" />
       <div className="auth-backdrop" aria-hidden />
       <div className="login-page-inner">
-        <div className="login-title-row">
-          <div className="login-title-row-lead">
-            <Link className="auth-back-link" to="/">
-              <svg
-                className="auth-back-icon"
-                width="18"
-                height="18"
-                viewBox="0 0 24 24"
-                aria-hidden
-                focusable="false"
-              >
-                <path
-                  fill="currentColor"
-                  d="M15.41 7.41 14 6l-6 6 6 6 1.41-1.41L10.83 12l4.58-4.59z"
-                />
-              </svg>
-              <span>Back</span>
-            </Link>
-          </div>
-          <h1 className="login-heading">Sign in</h1>
-          <div className="login-title-row-trail" aria-hidden />
-        </div>
+        <h1 className="login-heading">Sign in</h1>
         <p className="login-sub">Use your workspace username and password.</p>
 
         <div className="login-panel">
@@ -76,9 +57,27 @@ export function LoginPage() {
               />
             </label>
             {error ? <p className="auth-error">{error}</p> : null}
-            <button type="submit" className="btn-primary-block">
-              Sign in
-            </button>
+            <div className="login-form-actions">
+              <Link className="auth-back-link login-back-button" to="/">
+                <svg
+                  className="auth-back-icon"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  aria-hidden
+                  focusable="false"
+                >
+                  <path
+                    fill="currentColor"
+                    d="M15.41 7.41 14 6l-6 6 6 6 1.41-1.41L10.83 12l4.58-4.59z"
+                  />
+                </svg>
+                <span>Back</span>
+              </Link>
+              <button type="submit" className="btn-primary-block">
+                Sign in
+              </button>
+            </div>
           </form>
         </div>
       </div>

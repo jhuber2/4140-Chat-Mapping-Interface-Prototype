@@ -1,4 +1,4 @@
-﻿import { MapNodeData, Message } from './types';
+import { MapNodeData, Message } from './types';
 
 function parseTimestamp(value: string) {
   const parsed = new Date(`${value}, 2023`);
@@ -124,4 +124,34 @@ export function searchNodeContexts(query: string, nodes: MapNodeData[], messages
     .filter((result): result is NodeSearchResult & { score: number } => Boolean(result))
     .sort((a, b) => b.score - a.score || b.messageCount - a.messageCount || a.nodeId.localeCompare(b.nodeId))
     .map(({ score: _score, ...result }) => result);
+}
+
+/**
+ * Approximates rendered .map-node size from title + depth so connector geometry can match CSS
+ * (min-width 108px, max-width 230px, padding 9px 14px, border 1px, line-height 1.3).
+ */
+export function estimateMapNodeSize(node: MapNodeData): { width: number; height: number } {
+  const padH = 28;
+  const padV = 18;
+  const border = 2;
+  const fontSize = node.depth === 0 ? 14 : 13;
+  const lineHeight = fontSize * 1.3;
+  const avgCharPx = fontSize * 0.52;
+  const innerMax = 230 - padH - border;
+  const rawTextW = node.title.length * avgCharPx;
+
+  let width: number;
+  let lines: number;
+
+  if (rawTextW <= innerMax) {
+    width = Math.max(108, Math.min(230, Math.ceil(rawTextW) + padH + border));
+    lines = 1;
+  } else {
+    width = 230;
+    const charsPerLine = Math.max(1, Math.floor(innerMax / avgCharPx));
+    lines = Math.max(1, Math.ceil(node.title.length / charsPerLine));
+  }
+
+  const height = padV + border + lines * lineHeight;
+  return { width, height };
 }

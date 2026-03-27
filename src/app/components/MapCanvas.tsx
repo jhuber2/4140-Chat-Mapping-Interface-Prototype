@@ -1,6 +1,6 @@
-import { PointerEvent, WheelEvent, useEffect, useMemo, useRef, useState } from 'react';
+import { PointerEvent, WheelEvent, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { MapNodeData } from '../types';
-import type { NodeSearchResult } from '../mapUtils';
+import { estimateMapNodeSize, type NodeSearchResult } from '../mapUtils';
 import { MapNode } from './MapNode';
 
 type LayoutPoint = { x: number; y: number };
@@ -31,6 +31,7 @@ const depthX: Record<number, number> = {
 const WORLD_WIDTH = 1400;
 const WORLD_HEIGHT = 980;
 const DEFAULT_SCALE = 0.9;
+type NodeSize = { width: number; height: number };
 
 export function MapCanvas({
   nodes,
@@ -51,9 +52,11 @@ export function MapCanvas({
   const hasSelection = Boolean(selectedNodeId);
   const isNeutralOverview = !hasSelection && !inStartupOverview;
   const viewportRef = useRef<HTMLDivElement | null>(null);
+  const transformLayerRef = useRef<HTMLDivElement | null>(null);
   const dragRef = useRef<{ active: boolean; x: number; y: number }>({ active: false, x: 0, y: 0 });
   const didInitialCenterRef = useRef(false);
   const [viewport, setViewport] = useState({ x: 0, y: 0, scale: DEFAULT_SCALE });
+  const [measuredNodeSizes, setMeasuredNodeSizes] = useState<Record<string, NodeSize>>({});
 
   const pathIds = useMemo(() => {
     const ids = new Set<string>();
@@ -120,6 +123,33 @@ export function MapCanvas({
 
     return map;
   }, [visibleNodes]);
+
+  useLayoutEffect(() => {
+    const layer = transformLayerRef.current;
+    if (!layer) return;
+
+    const next: Record<string, NodeSize> = {};
+    const nodeElements = layer.querySelectorAll<HTMLButtonElement>('.map-node[data-node-id]');
+    nodeElements.forEach((element) => {
+      const id = element.dataset.nodeId;
+      if (!id) return;
+      next[id] = { width: element.offsetWidth, height: element.offsetHeight };
+    });
+
+    setMeasuredNodeSizes((current) => {
+      const currentKeys = Object.keys(current);
+      const nextKeys = Object.keys(next);
+      if (currentKeys.length !== nextKeys.length) return next;
+      for (const key of nextKeys) {
+        const currentSize = current[key];
+        const nextSize = next[key];
+        if (!currentSize || currentSize.width !== nextSize.width || currentSize.height !== nextSize.height) {
+          return next;
+        }
+      }
+      return current;
+    });
+  }, [visibleNodes, positions, selectedNodeId, searchQuery]);
 
   const onPointerDown = (event: PointerEvent<HTMLDivElement>) => {
     if ((event.target as HTMLElement).closest('.map-node')) return;
@@ -249,6 +279,7 @@ export function MapCanvas({
           onPointerUp={onPointerUp}
         >
           <div
+            ref={transformLayerRef}
             className="map-transform-layer"
             style={{ width: WORLD_WIDTH, height: WORLD_HEIGHT, transform: `translate(${viewport.x}px, ${viewport.y}px) scale(${viewport.scale})` }}
           >
@@ -259,10 +290,16 @@ export function MapCanvas({
                 const child = positions.get(node.id);
                 if (!parent || !child) return null;
 
-                const startX = parent.x + 158;
-                const startY = parent.y + 18;
+                const parentData = nodeById.get(node.parentId);
+                const childData = nodeById.get(node.id);
+                if (!parentData || !childData) return null;
+
+                const parentSize = measuredNodeSizes[parentData.id] ?? estimateMapNodeSize(parentData);
+                const childSize = measuredNodeSizes[childData.id] ?? estimateMapNodeSize(childData);
+                const startX = parent.x + parentSize.width;
+                const startY = parent.y + parentSize.height / 2;
                 const endX = child.x;
-                const endY = child.y + 18;
+                const endY = child.y + childSize.height / 2;
                 const curve = Math.max(46, (endX - startX) * 0.45);
                 const d = `M ${startX} ${startY} C ${startX + curve} ${startY}, ${endX - curve} ${endY}, ${endX} ${endY}`;
                 const active = hasSelection ? pathIds.has(node.parentId) && pathIds.has(node.id) : false;
@@ -326,10 +363,11 @@ function centerVisibleNodes(
   visibleNodes.forEach((node) => {
     const position = positions.get(node.id);
     if (!position) return;
+    const { width, height } = estimateMapNodeSize(node);
     minX = Math.min(minX, position.x);
-    maxX = Math.max(maxX, position.x + 220);
+    maxX = Math.max(maxX, position.x + width);
     minY = Math.min(minY, position.y);
-    maxY = Math.max(maxY, position.y + 44);
+    maxY = Math.max(maxY, position.y + height);
   });
 
   if (!Number.isFinite(minX) || !Number.isFinite(minY) || !Number.isFinite(maxX) || !Number.isFinite(maxY)) {

@@ -1,4 +1,5 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router';
+import { ThemeProvider } from 'next-themes';
 import { AuthProvider } from './AuthContext';
 import './prototype.css';
 import { LandingPage } from './components/LandingPage';
@@ -14,22 +15,24 @@ function routerBasename() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter basename={routerBasename()}>
-        <Routes>
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route
-            path="/app"
-            element={
-              <ProtectedRoute>
-                <PrototypeApp />
-              </ProtectedRoute>
-            }
-          />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </BrowserRouter>
-    </AuthProvider>
+    <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
+      <AuthProvider>
+        <BrowserRouter basename={routerBasename()}>
+          <Routes>
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route
+              path="/app"
+              element={
+                <ProtectedRoute>
+                  <PrototypeApp />
+                </ProtectedRoute>
+              }
+            />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </BrowserRouter>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }

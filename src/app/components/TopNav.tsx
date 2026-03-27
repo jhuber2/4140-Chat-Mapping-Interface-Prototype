@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { ThemeToggle } from './ThemeToggle';
 
 type TopNavProps = {
   currentView: 'chat' | 'map' | 'operator';
@@ -46,6 +47,7 @@ export function TopNav({ currentView, onChangeView, sessionLabel, realtimeStatus
         </button>
       </div>
       <div className="nav-right">
+        <ThemeToggle />
         <div className="nav-account-wrap" ref={accountRef}>
           <button
             type="button"
