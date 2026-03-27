@@ -1,3 +1,4 @@
+import { Message } from '../types';
 import { MapNodeData } from '../types';
 import type { NodeSearchResult } from '../mapUtils';
 import { MapCanvas } from './MapCanvas';
@@ -12,12 +13,16 @@ type MapViewProps = {
   breadcrumbNodeIds: string[];
   searchQuery: string;
   searchResults: NodeSearchResult[];
+  messages: Message[];
+  messagesVisible: boolean;
+  senderColorByName: Map<string, string>;
   onSelectNode: (nodeId: string) => void;
-  onOpenSupporting: () => void;
+  onToggleMessages: () => void;
   onSearchChange: (value: string) => void;
   onClearSearch: () => void;
   onResultSelect: (nodeId: string) => void;
   onBreadcrumbSelect: (nodeId: string) => void;
+  onViewInChat: (messageId: string) => void;
 };
 
 export function MapView({
@@ -29,17 +34,22 @@ export function MapView({
   breadcrumbNodeIds,
   searchQuery,
   searchResults,
+  messages,
+  messagesVisible,
+  senderColorByName,
   onSelectNode,
-  onOpenSupporting,
+  onToggleMessages,
   onSearchChange,
   onClearSearch,
   onResultSelect,
   onBreadcrumbSelect,
+  onViewInChat,
 }: MapViewProps) {
   const selectedNode = nodes.find((node) => node.id === selectedNodeId);
+  const shouldShowDetailsPanel = Boolean(selectedNode && selectedNode.id !== '0');
 
   return (
-    <section className="map-view-layout">
+    <section className={`map-view-layout ${shouldShowDetailsPanel ? 'has-detail-panel' : 'no-detail-panel'}`}>
       <MapCanvas
         nodes={nodes}
         selectedNodeId={selectedNodeId}
@@ -55,7 +65,16 @@ export function MapView({
         onResultSelect={onResultSelect}
         onBreadcrumbSelect={onBreadcrumbSelect}
       />
-      <NodeDetailPanel node={selectedNode} onViewMessages={onOpenSupporting} />
+      {shouldShowDetailsPanel ? (
+        <NodeDetailPanel
+          node={selectedNode}
+          messages={messages}
+          messagesVisible={messagesVisible}
+          senderColorByName={senderColorByName}
+          onToggleMessages={onToggleMessages}
+          onViewInChat={onViewInChat}
+        />
+      ) : null}
     </section>
   );
 }

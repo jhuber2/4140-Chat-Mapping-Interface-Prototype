@@ -27,6 +27,8 @@ export function ChatView({
   chatEntryIntent,
   onChatEntryIntentHandled,
 }: ChatViewProps) {
+  const HIGHLIGHT_VISIBLE_MS = 1200;
+  const SCROLL_BUFFER_MS = 180;
   const threadRef = useRef<HTMLDivElement | null>(null);
   const rowRefs = useRef(new Map<string, HTMLElement>());
   const [highlightedMessageId, setHighlightedMessageId] = useState<string | null>(null);
@@ -75,13 +77,15 @@ export function ChatView({
       if (target) {
         suppressAutoScrollRef.current = true;
         const nextTop = target.offsetTop - thread.clientHeight / 2 + target.clientHeight / 2;
+        const travelDistance = Math.abs(thread.scrollTop - nextTop);
+        const estimatedScrollMs = Math.min(900, 220 + travelDistance * 0.45);
         thread.scrollTo({ top: Math.max(0, nextTop), behavior: 'smooth' });
         setHighlightedMessageId(focusMessageId);
         window.setTimeout(() => {
           setHighlightedMessageId((current) => (current === focusMessageId ? null : current));
           suppressAutoScrollRef.current = false;
           onFocusHandled();
-        }, 1000);
+        }, estimatedScrollMs + HIGHLIGHT_VISIBLE_MS + SCROLL_BUFFER_MS);
         return;
       }
 
@@ -101,8 +105,8 @@ export function ChatView({
   return (
     <section className="chat-view">
       <div className="chat-view-header">
-        <h2>Group Project Chat</h2>
-        <p>{messages.length} messages in this session</p>
+        <h2>Team 3 CPSC 4140</h2>
+        <p>{messages.length} messages</p>
       </div>
       <div className="chat-thread" ref={threadRef}>
         {messages.map((message) => {

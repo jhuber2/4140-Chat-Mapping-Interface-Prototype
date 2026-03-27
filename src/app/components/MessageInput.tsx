@@ -8,6 +8,8 @@ type MessageInputProps = {
 };
 
 export function MessageInput({ value, onChange, onSend, placeholder = 'Write a message...' }: MessageInputProps) {
+  const canSend = value.trim().length > 0;
+
   return (
     <div className="message-input-wrap">
       <input
@@ -22,8 +24,24 @@ export function MessageInput({ value, onChange, onSend, placeholder = 'Write a m
           }
         }}
       />
-      <button className="send-button" onClick={onSend}>
-        Send
+      <button className="send-button" onClick={onSend} aria-label="Send message" type="button" disabled={!canSend}>
+        <svg
+          className="send-button-icon"
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+          focusable="false"
+        >
+          <path
+            d="M12 20V5M12 5l-5 5M12 5l5 5"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
       </button>
     </div>
   );

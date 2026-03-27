@@ -1,154 +1,178 @@
-﻿# Chat Mapping Interface
-# NEW BRANCH CHECK
+# Chat Mapping Interface
 
-Chat Mapping Interface is a front-end HCI prototype for visualizing a team conversation in two synchronized ways:
-- `Chat View`: chronological team discussion
-- `Map View`: branching topic map of the same conversation
+Chat Mapping Interface is a frontend HCI prototype for exploring the same team conversation in two synchronized ways:
 
-This is intentionally a Wizard-of-Oz prototype.
+- `Chat View`: the chronological conversation
+- `Map View`: a topic map / branching structure of that same conversation
 
-## Project Scope
+This is intentionally a Wizard-of-Oz prototype. The system is designed for interactive demos, not production deployment.
 
-This project is intentionally **frontend-first**:
-- No database
-- No production authentication service
-- No external AI APIs
-- No NLP service
-- Optional lightweight websocket relay for live multi-device demos
+## Project At A Glance
 
-All behavior is implemented with:
-- React functional components
-- Local component/state logic with optional realtime event relay
-- Mock JSON-style seed data
+- Frontend-first React prototype
+- Seeded conversation and topic-map data
+- Local state drives most behavior
+- Optional WebSocket relay for live multi-device demos
+- Includes a facilitator view for manual intervention during demos
+- No database, production auth, AI backend, or NLP service
 
-## Core Prototype Behavior
+## Requirements
 
-### 1) Chat and Map Are Linked
-- Seeded team messages are shown in `Chat View`
-- Each message is assigned to one or more map nodes (`nodeIds`)
-- `Map View` shows the same conversation as a topic tree
-- Selecting a map node opens details and supporting evidence
+- Node.js installed
+- npm installed
+- A modern desktop browser
+- Optional for realtime demos: access to two devices or browser windows, plus a reachable WebSocket host
 
-### 2) Auto-Routing (Scripted)
-When a user sends a message, a local keyword matcher routes it to a project-planning topic node.
+## Quick Start
 
-Messages that do not strongly match are routed to `General Conversation` or handled manually in operator mode.
+### 1. Install dependencies
 
-### 3) Wizard-of-Oz Operator View
-Operator View is for live demo control when participant input is unexpected.
-
-What operators can do:
-- Review recent incoming messages
-- Review unassigned messages
-- Manually assign a message to an existing node
-- Create a new node under a chosen parent
-
-This keeps the demo robust without requiring real AI classification.
-
-## Main Views
-
-### Chat View
-- Long, realistic team conversation history
-- Sender, timestamp, and message text
-- Input bar for new local messages
-- New messages are appended and routed into the map model
-
-### Map View
-- Root-to-right hierarchical topic map
-- Expandable branch behavior
-- Selected-path highlighting
-- Pan/zoom map workspace with reset controls
-- Right detail panel for summary, metadata, and decisions
-- Supporting messages modal for node evidence
-
-## Data Model Notes
-
-### Message shape
-Messages use fields such as:
-- `id`
-- `sender`
-- `text`
-- `timestamp`
-- `nodeIds`
-- `autoMapped`
-- `assignedManually`
-
-### Node shape
-Nodes use fields such as:
-- `id`
-- `title`
-- `parentId`
-- `summary`
-- `metadata`
-- `decisions`
-- `supportingMessageIds`
-- `childrenIds`
-- `depth`
-
-Node metadata (message counts, first discussed, last active) is derived from assigned messages so chat/map stay consistent.
-
-## Running the Code
-
-From this project directory:
-
-1. Install dependencies
 ```bash
-npm i
+npm install
 ```
 
-2. Start frontend development server
+### 2. Start the frontend
+
 ```bash
 npm run dev
 ```
 
-3. Start websocket relay server (for realtime collaboration demos)
+### 3. Open the app
+
+Vite will print a local URL such as:
+
+```text
+http://localhost:5173
+```
+
+Open that URL in your browser.
+
+### 4. Sign in with a demo account
+
+- Username: `jack`
+- Username: `boyd`
+- Username: `emmanuel`
+- Username: `graham`
+- Password for all demo accounts: `cpsc4140`
+
+After sign-in, the main prototype loads at `/app`.
+
+## What This Project Is
+
+This repository contains a course prototype for comparing two synchronized representations of the same team discussion:
+
+- `Chat View` shows the full conversation as a standard message thread.
+- `Map View` shows the conversation as a topic structure with branches, supporting messages, and detail panels.
+- `Facilitator` view supports Wizard-of-Oz control during demos by letting a human manually assign messages to topics or create new topics.
+
+The goal is to demonstrate an interface concept, not to provide a production-ready collaboration system.
+
+## Technologies Used
+
+- React functional components
+- TypeScript
+- Vite
+- React Router
+- Local component state and reducer-driven workspace logic
+
+## Available Commands
+
+Run these from the repository root:
+
+- `npm install`: install project dependencies
+- `npm run dev`: start the Vite development server
+- `npm run ws:server`: start the optional WebSocket relay on port `8080`
+- `npm run build`: create a production build in `dist/`
+- `npm run build:gh-pages`: build using the GitHub Pages mode and generate the fallback file
+
+If you are on Linux and want short aliases, this repo also includes [Makefile]
+
+- `make install`
+- `make dev`
+- `make ws`
+- `make build`
+
+The Makefile is only a convenience wrapper around the npm commands above.
+
+## How To Run
+
+For most people, these are the only commands that matter:
+
+```bash
+npm install
+npm run dev
+```
+
+Then open the local Vite URL, sign in with one of the demo accounts, and use the interface.
+
+If you also want realtime sync between devices, run the relay in a second terminal:
+
 ```bash
 npm run ws:server
 ```
 
-4. Build for production (optional)
+## Realtime Demo Setup
+
+Realtime sync is optional. Without it, the prototype still works locally with seeded data and local state.
+
+The relay is:
+
+- lightweight
+- in-memory only
+- room-based
+- currently hardcoded to the room ID `demo-room`
+
+### Local realtime setup
+
+1. Start the WebSocket relay:
+
 ```bash
-npm run build
+npm run ws:server
 ```
 
-## Realtime Demo Setup (Two Devices)
+2. Create or update `.env.local` in the repo root:
 
-The realtime layer is room-based (`demo-room`) and keeps in-memory shared state only.
+```env
+VITE_WS_URL=ws://localhost:8080
+```
 
-### 1) Configure websocket URL for frontend
-Create `.env.local`:
+3. Start the frontend:
+
+```bash
+npm run dev
+```
+
+4. Open the app in two browser windows or on two devices using the same frontend build.
+
+5. Sign in on each client. Actions such as new messages, manual assignments, topic creation, and workspace reset will sync through the relay.
+
+### Off-machine or multi-device setup
+
+If the relay is running on another machine, point `VITE_WS_URL` at that host instead:
+
 ```env
 VITE_WS_URL=ws://<SERVER_IP>:8080
 ```
 
-For ngrok:
+If you expose the relay through a tunnel such as ngrok, use a secure WebSocket URL:
+
 ```env
-VITE_WS_URL=wss://<your-ngrok-domain>.ngrok-free.dev
+VITE_WS_URL=wss://<your-domain>
 ```
 
-### 2) Run relay server on host machine
-```bash
-npm run ws:server
-```
+## Prototype Limitations
 
-### 3) Expose relay with ngrok (if off-LAN)
-```bash
-ngrok http 8080
-```
+- This is not a production chat system.
+- Authentication is seeded local demo auth, not a real auth service.
+- There is no database or persistent backend storage.
+- Realtime state is in memory only and is lost when the relay restarts.
+- Topic routing is scripted local logic, not AI or NLP classification.
+- The relay currently uses a single hardcoded room ID: `demo-room`.
 
-### 4) Run frontend on each device
-- Open the app on Device A and Device B
-- Sign in and enter `/app`
-- Both clients will join the same shared room and sync:
-  - message creation
-  - message assignment
-  - node creation
-  - workspace reset
+## Files And Commands That Matter Most
 
-## Suggested Demo Flow
+If you are scanning the repo quickly, start here:
 
-1. Start in `Map View` and show major topic branches
-2. Switch to `Chat View` to show chronological team context
-3. Send a new message and show auto-routing into the map
-4. Open `Operator View` and manually reassign a message to demonstrate Wizard-of-Oz control
-5. Open `View Supporting Messages` for a selected node to show evidence traceability
+- `npm install`
+- `npm run dev`
+- `npm run ws:server` for optional realtime demos

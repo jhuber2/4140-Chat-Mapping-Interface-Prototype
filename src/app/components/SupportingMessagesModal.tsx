@@ -26,7 +26,7 @@ export function SupportingMessagesModal({ isOpen, title, messages, onClose, send
 
         <div className="modal-messages">
           {messages.map((message) => (
-            <article key={message.id} className="modal-message-row">
+            <article key={message.id} className="modal-message-row" tabIndex={0}>
               <div className="chat-avatar" style={{ backgroundColor: senderColorByName.get(message.sender) ?? '#2f6bff' }}>
                 {initialsFromSender(message.sender)}
               </div>
@@ -36,8 +36,8 @@ export function SupportingMessagesModal({ isOpen, title, messages, onClose, send
                   <span className="chat-time">{message.timestamp}</span>
                 </div>
                 <p className="chat-text">{message.text}</p>
-                <button className="modal-jump-button" onClick={() => onViewInChat(message.id)}>
-                  View in chat
+                <button className="modal-jump-button" onClick={() => onViewInChat(message.id)} aria-label={`View message from ${message.sender} in chat`}>
+                  View in chat <span aria-hidden="true">↗</span>
                 </button>
               </div>
             </article>

@@ -4,7 +4,6 @@ import { useAuth } from './AuthContext';
 import { ChatView } from './components/ChatView';
 import { MapView } from './components/MapView';
 import { OperatorView } from './components/OperatorView';
-import { SupportingMessagesModal } from './components/SupportingMessagesModal';
 import { TopNav } from './components/TopNav';
 import { deriveNodesWithMessageData, getPathToRoot, searchNodeContexts } from './mapUtils';
 import { initialExpandedNodeIds, initialMessages, initialNodes } from './mockData';
@@ -145,7 +144,7 @@ export default function PrototypeApp() {
   const [expandedNodeIds, setExpandedNodeIds] = useState<Set<string>>(new Set(initialExpandedNodeIds));
   const [hasEnteredMapView, setHasEnteredMapView] = useState(false);
   const [hasInteractedWithMap, setHasInteractedWithMap] = useState(false);
-  const [supportingOpen, setSupportingOpen] = useState(false);
+  const [detailMessagesEnabled, setDetailMessagesEnabled] = useState(true);
   const [draft, setDraft] = useState('');
   const [focusMessageId, setFocusMessageId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -167,7 +166,7 @@ export default function PrototypeApp() {
   }, [searchQuery, searchResults, enrichedNodes]);
 
   const senderColorByName = useMemo(() => {
-    const palette = ['#28a745', '#2f6bff', '#aa5eff', '#d93f7a', '#00a6b2', '#ef4444', '#6d28d9', '#0ea5e9', '#84cc16', '#f59e0b', '#14b8a6', '#e11d48'];
+    const palette = ['#3b82f6', '#10b981', '#6366f1', '#f59e0b', '#ec4899', '#14b8a6', '#8b5cf6', '#0ea5e9', '#84cc16', '#f97316', '#06b6d4', '#e11d48'];
     const map = new Map<string, string>();
     workspace.messages.forEach((message) => {
       if (map.has(message.sender)) return;
@@ -196,7 +195,6 @@ export default function PrototypeApp() {
         setExpandedNodeIds(new Set(initialExpandedNodeIds));
         setHasEnteredMapView(false);
         setHasInteractedWithMap(false);
-        setSupportingOpen(false);
         setFocusMessageId(null);
         setSearchQuery('');
         setSearchResults([]);
@@ -237,9 +235,17 @@ export default function PrototypeApp() {
   const applySelectionState = (nodeId: string, options?: { forceExpandTarget?: boolean }) => {
     const node = nodeById.get(nodeId);
     if (!node) return;
+    const ancestorIds = getPathToRoot(nodeId, enrichedNodes).slice(0, -1);
 
     setExpandedNodeIds((current) => {
+      if (options?.forceExpandTarget) {
+        const next = new Set<string>(ancestorIds);
+        if (node.childrenIds.length > 0) next.add(nodeId);
+        return next;
+      }
+
       const next = new Set(current);
+      ancestorIds.forEach((ancestorId) => next.add(ancestorId));
       const siblingIds = node.parentId ? nodeById.get(node.parentId)?.childrenIds ?? [] : [];
       siblingIds.forEach((siblingId) => {
         if (siblingId === nodeId) return;
@@ -367,7 +373,6 @@ export default function PrototypeApp() {
     setExpandedNodeIds(new Set(initialExpandedNodeIds));
     setHasEnteredMapView(false);
     setHasInteractedWithMap(false);
-    setSupportingOpen(false);
     setFocusMessageId(null);
     setSearchQuery('');
     setSearchResults([]);
@@ -437,12 +442,20 @@ export default function PrototypeApp() {
             breadcrumbNodeIds={breadcrumbNodeIds}
             searchQuery={searchQuery}
             searchResults={searchResults}
+            messages={supportingMessages}
+            messagesVisible={detailMessagesEnabled && supportingMessages.length > 0}
+            senderColorByName={senderColorByName}
             onSelectNode={handleSelectNode}
-            onOpenSupporting={() => setSupportingOpen(true)}
+            onToggleMessages={() => setDetailMessagesEnabled((current) => !current)}
             onSearchChange={setSearchQuery}
             onClearSearch={() => setSearchQuery('')}
             onResultSelect={(nodeId) => applySelectionState(nodeId, { forceExpandTarget: true })}
             onBreadcrumbSelect={(nodeId) => applySelectionState(nodeId, { forceExpandTarget: true })}
+            onViewInChat={(messageId) => {
+              setFocusMessageId(messageId);
+              setChatEntryIntent('focus');
+              setCurrentView('chat');
+            }}
           />
         ) : (
           <OperatorView
@@ -450,26 +463,13 @@ export default function PrototypeApp() {
             unassignedMessages={unassignedMessages}
             nodes={enrichedNodes}
             assignmentLog={workspace.assignmentLog}
+            realtimeStatus={wsUrl ? realtimeStatus : 'disconnected'}
             onAssign={manuallyAssignMessage}
             onCreateNode={createNode}
             onResetWorkspace={resetWorkspace}
           />
         )}
       </main>
-
-      <SupportingMessagesModal
-        isOpen={supportingOpen}
-        title={selectedNode?.title ?? 'Topic'}
-        messages={supportingMessages}
-        onClose={() => setSupportingOpen(false)}
-        senderColorByName={senderColorByName}
-        onViewInChat={(messageId) => {
-          setFocusMessageId(messageId);
-          setChatEntryIntent('focus');
-          setSupportingOpen(false);
-          setCurrentView('chat');
-        }}
-      />
     </div>
   );
 }

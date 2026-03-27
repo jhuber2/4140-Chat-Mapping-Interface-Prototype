@@ -1,3 +1,6 @@
+import { useEffect, useRef, useState } from 'react';
+import { ThemeToggle } from './ThemeToggle';
+
 type TopNavProps = {
   currentView: 'chat' | 'map' | 'operator';
   onChangeView: (view: 'chat' | 'map' | 'operator') => void;
@@ -7,37 +10,85 @@ type TopNavProps = {
 };
 
 export function TopNav({ currentView, onChangeView, sessionLabel, realtimeStatus, onLogout }: TopNavProps) {
-  const connectionLabel = realtimeStatus === 'connected' ? 'Connected' : realtimeStatus === 'connecting' ? 'Connecting' : 'Disconnected';
+  const sessionInitial = sessionLabel.trim().charAt(0).toUpperCase() || 'U';
+  const [menuOpen, setMenuOpen] = useState(false);
+  const accountRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const onPointerDown = (event: MouseEvent) => {
+      if (!accountRef.current?.contains(event.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setMenuOpen(false);
+    };
+
+    document.addEventListener('mousedown', onPointerDown);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', onPointerDown);
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, []);
 
   return (
     <header className="top-nav">
       <div className="nav-left-cluster">
-        <h1 className="app-title">Group Project Planning</h1>
-        {sessionLabel ? (
-          <>
-            <span className="nav-session-divider" aria-hidden="true" />
-            <span className="nav-session-name" title={sessionLabel}>
-              {sessionLabel}
-            </span>
-          </>
-        ) : null}
-        <span className={`nav-connection-status ${realtimeStatus}`} title={`Realtime: ${connectionLabel}`}>
-          {connectionLabel}
-        </span>
-      </div>
-      <div className="nav-right">
         <button className={`nav-tab ${currentView === 'chat' ? 'active' : ''}`} onClick={() => onChangeView('chat')}>
           Chat View
         </button>
         <button className={`nav-tab ${currentView === 'map' ? 'active' : ''}`} onClick={() => onChangeView('map')}>
           Map View
         </button>
-        <button className={`nav-tab ${currentView === 'operator' ? 'active' : ''}`} onClick={() => onChangeView('operator')}>
+      </div>
+      <div className="nav-center">
+        <button
+          type="button"
+          className={`nav-tab nav-tab-facilitator-hidden ${currentView === 'operator' ? 'active' : ''}`}
+          onClick={() => onChangeView('operator')}
+          aria-label="Facilitator"
+          title="Facilitator"
+        >
           Facilitator
         </button>
-        <button type="button" className="nav-logout" onClick={onLogout}>
-          Log out
-        </button>
+      </div>
+      <div className="nav-right">
+        <ThemeToggle />
+        <div className="nav-account-wrap" ref={accountRef}>
+          <button
+            type="button"
+            className="nav-account-cluster"
+            aria-label="Open profile menu"
+            aria-expanded={menuOpen}
+            onClick={() => setMenuOpen((current) => !current)}
+          >
+            <span className="nav-account-avatar" aria-hidden="true">
+              {sessionInitial}
+            </span>
+            <span className="nav-account-meta">
+              <span className="nav-session-name" title={sessionLabel}>
+                {sessionLabel}
+              </span>
+            </span>
+          </button>
+          {menuOpen ? (
+            <div className="nav-account-menu" role="menu">
+              <button
+                type="button"
+                className="nav-account-menu-item"
+                role="menuitem"
+                onClick={() => {
+                  setMenuOpen(false);
+                  onLogout();
+                }}
+              >
+                Log out
+              </button>
+            </div>
+          ) : null}
+        </div>
       </div>
     </header>
   );
