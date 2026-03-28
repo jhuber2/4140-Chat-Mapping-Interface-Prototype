@@ -10,7 +10,7 @@ type OperatorPanelProps = {
   nodes: MapNodeData[];
   onClose: () => void;
   onAssign: (messageId: string, nodeId: string) => void;
-  onCreateNode: (title: string, parentId: string) => void;
+  onCreateNode: (title: string, parentId: string, summary: string) => void;
   onResetWorkspace: () => void;
 };
 

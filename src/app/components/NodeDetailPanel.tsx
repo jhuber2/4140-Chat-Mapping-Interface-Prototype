@@ -56,7 +56,7 @@ export function NodeDetailPanel({ node, messages, messagesVisible, senderColorBy
 
       {hasMessages && messagesVisible ? (
         <div className="detail-messages-section">
-          {messages.map((message) => (
+          {[...messages].reverse().map((message) => (
             <article key={message.id} className="detail-message-item">
               <div className="chat-avatar" style={{ backgroundColor: senderColorByName.get(message.sender) ?? '#2f6bff' }}>
                 {initialsFromSender(message.sender)}
