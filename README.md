@@ -1,53 +1,28 @@
 # Chat Mapping Interface
 
-Chat Mapping Interface is a frontend HCI prototype for exploring the same team conversation in two synchronized ways:
+Chat Mapping Interface is a frontend HCI prototype for viewing the same team conversation in two synchronized forms:
 
-- `Chat View`: the chronological conversation
-- `Map View`: a topic map / branching structure of that same conversation
+- `Chat View`: a chronological message thread
+- `Map View`: a topic map showing how the conversation branches and relates
 
-This is intentionally a Wizard-of-Oz prototype. The system is designed for interactive demos, not production deployment.
+This project is intentionally a Wizard-of-Oz prototype. It is built for demos, walkthroughs, and evaluation of the interaction concept, not for production deployment.
 
-## Project At A Glance
+## Start Here
 
-- Frontend-first React prototype
-- Seeded conversation and topic-map data
-- Local state drives most behavior
-- Optional WebSocket relay for live multi-device demos
-- Includes a facilitator view for manual intervention during demos
-- No database, production auth, AI backend, or NLP service
-
-## Requirements
-
-- Node.js installed
-- npm installed
-- A modern desktop browser
-- Optional for realtime demos: access to two devices or browser windows, plus a reachable WebSocket host
-
-## Quick Start
-
-### 1. Install dependencies
+The normal startup path for this project is:
 
 ```bash
 npm install
-```
-
-### 2. Start the frontend
-
-```bash
 npm run dev
 ```
 
-### 3. Open the app
-
-Vite will print a local URL such as:
+Then open the local Vite URL printed in the terminal, usually:
 
 ```text
 http://localhost:5173
 ```
 
-Open that URL in your browser.
-
-### 4. Sign in with a demo account
+Sign in with one of the seeded demo accounts:
 
 - Username: `jack`
 - Username: `boyd`
@@ -55,82 +30,159 @@ Open that URL in your browser.
 - Username: `graham`
 - Password for all demo accounts: `cpsc4140`
 
-After sign-in, the main prototype loads at `/app`.
+After login, the protected prototype loads at `/app`.
 
-## What This Project Is
+## Basic Setup In This Workspace
 
-This repository contains a course prototype for comparing two synchronized representations of the same team discussion:
+### Requirements
 
-- `Chat View` shows the full conversation as a standard message thread.
-- `Map View` shows the conversation as a topic structure with branches, supporting messages, and detail panels.
-- `Facilitator` view supports Wizard-of-Oz control during demos by letting a human manually assign messages to topics or create new topics.
+- Node.js
+- npm
+- A modern browser
 
-The goal is to demonstrate an interface concept, not to provide a production-ready collaboration system.
-
-## Technologies Used
-
-- React functional components
-- TypeScript
-- Vite
-- React Router
-- Local component state and reducer-driven workspace logic
-
-## Available Commands
-
-Run these from the repository root:
-
-- `npm install`: install project dependencies
-- `npm run dev`: start the Vite development server
-- `npm run ws:server`: start the optional WebSocket relay on port `8080`
-- `npm run build`: create a production build in `dist/`
-- `npm run build:gh-pages`: build using the GitHub Pages mode and generate the fallback file
-
-If you are on Linux and want short aliases, this repo also includes [Makefile]
-
-- `make install`
-- `make dev`
-- `make ws`
-- `make build`
-
-The Makefile is only a convenience wrapper around the npm commands above.
-
-## How To Run
-
-For most people, these are the only commands that matter:
+### Install dependencies
 
 ```bash
 npm install
+```
+
+### Start the frontend
+
+```bash
 npm run dev
 ```
 
-Then open the local Vite URL, sign in with one of the demo accounts, and use the interface.
+This launches the Vite development server for the React frontend.
 
-If you also want realtime sync between devices, run the relay in a second terminal:
+### Optional: start realtime sync
+
+If you want two browser windows or two devices to stay in sync during a demo or Wizard-of-Oz testing, run the WebSocket relay in a second terminal:
 
 ```bash
 npm run ws:server
 ```
 
-## Realtime Demo Setup
+The local workspace is already configured to use:
 
-Realtime sync is optional. Without it, the prototype still works locally with seeded data and local state.
+```env
+VITE_WS_URL=ws://localhost:8080
+```
 
-The relay is:
+That value lives in `.env.local`. If the relay is not running, the frontend still works locally without realtime sync.
 
-- lightweight
-- in-memory only
-- room-based
-- currently hardcoded to the room ID `demo-room`
+
+## Project Overview
+
+This repository contains a React + TypeScript prototype for comparing two representations of the same group discussion:
+
+- `Chat View` shows the conversation as a familiar chat timeline.
+- `Map View` shows the same conversation as a structured topic tree.
+- `Facilitator` view supports Wizard-of-Oz intervention during demos.
+
+The central idea is that a team discussion can be explored either as a linear message history or as a map of topics, subtopics, and supporting messages. The prototype lets a participant move between those views while keeping them tied to the same underlying workspace state.
+
+## How The App Starts Up
+
+From the codebase perspective, startup works like this:
+
+1. Vite serves `index.html`, which loads `src/main.tsx`.
+2. `src/main.tsx` mounts the React application.
+3. `src/app/App.tsx` wraps the app in:
+   - `ThemeProvider` for light/dark theme support
+   - `AuthProvider` for seeded local session state
+   - `BrowserRouter` for route handling
+4. The router exposes:
+   - `/` for the landing page
+   - `/login` for sign-in
+   - `/app` for the protected prototype
+5. After login, `PrototypeApp` loads the seeded workspace data and manages the main app state.
+
+The application is frontend-first. Most behavior comes from local React state and reducer logic, with optional realtime synchronization layered on top.
+
+## Main Views
+
+### Landing Page
+
+The landing page is a lightweight entry point with branding and a sign-in button. It does not contain application data itself.
+
+### Login
+
+Login is local and seeded for demo use. There is no production authentication system, user directory, or backend identity provider. Successful login writes a local session and unlocks the protected `/app` route.
+
+### Chat View
+
+Chat View presents the conversation as a standard message thread. Users can:
+
+- read the seeded discussion history
+- send new messages
+- see sender names and timestamps
+- jump back to a specific message when navigating from the map detail panel
+
+When a new message is sent, the app runs simple scripted routing logic to choose a topic node. This is not AI classification. It is keyword-based demo logic designed to support the prototype.
+
+### Map View
+
+Map View visualizes the same workspace as a hierarchy of topics. Users can:
+
+- expand and collapse parts of the topic tree
+- select nodes to inspect them
+- search for nodes and navigate to results
+- open supporting messages tied to a node
+- jump from a node's detail panel back into Chat View
+
+This is the core interaction concept of the project: the same conversation can be explored semantically through topic structure, not only chronologically through chat.
+
+### Facilitator View
+
+The Facilitator tab is the Wizard-of-Oz control surface.
+
+Its purpose is to let a human operator actively manage the prototype during a demo or study session. Instead of relying on a real backend intelligence layer, the facilitator can keep the topic map coherent by stepping in manually.
+
+The facilitator can:
+
+- review all incoming messages
+- see whether a message was auto-routed, manually assigned, or left unassigned
+- manually assign or reassign a message to a topic
+- create a new topic under an existing parent
+- delete a topic
+- review recent assignment activity
+- reset the workspace back to the seeded state
+
+This tab is important because it makes the prototype workable without requiring a production-quality automatic topic classification system. In a demo, the operator can quietly correct or guide the conversation structure behind the scenes.
+
+## Realtime And WebSockets
+
+Realtime sync is optional.
+
+Without the WebSocket relay, the prototype still works entirely in a single browser session using local seeded state.
+
+With the relay enabled, multiple clients can share the same in-memory workspace during a demo. This is mainly useful for Wizard-of-Oz testing and facilitated multi-device sessions. The relay:
+
+- runs on port `8080`
+- uses WebSockets through the `ws` package
+- keeps room state in memory only
+- broadcasts workspace events to connected clients
+- currently uses a hardcoded room ID: `demo-room`
+
+The frontend publishes and listens for workspace events such as:
+
+- `chat.message.created`
+- `message.assigned`
+- `node.created`
+- `node.deleted`
+- `workspace.reset`
+
+The relay does not persist data. If the relay restarts, the shared session state is lost.
 
 ### Local realtime setup
 
-1. Start the WebSocket relay:
+1. Start the relay:
 
 ```bash
 npm run ws:server
 ```
 
-2. Create or update `.env.local` in the repo root:
+2. Confirm `.env.local` points at the relay:
 
 ```env
 VITE_WS_URL=ws://localhost:8080
@@ -142,37 +194,69 @@ VITE_WS_URL=ws://localhost:8080
 npm run dev
 ```
 
-4. Open the app in two browser windows or on two devices using the same frontend build.
+4. Open the app in two browser windows or on two devices.
 
-5. Sign in on each client. Actions such as new messages, manual assignments, topic creation, and workspace reset will sync through the relay.
+5. Log in on each client and interact with the shared workspace.
 
-### Off-machine or multi-device setup
+### Off-machine realtime setup
 
-If the relay is running on another machine, point `VITE_WS_URL` at that host instead:
+If the relay runs on another machine, update `.env.local` to point to that host:
 
 ```env
 VITE_WS_URL=ws://<SERVER_IP>:8080
 ```
 
-If you expose the relay through a tunnel such as ngrok, use a secure WebSocket URL:
+If you expose the relay through a secure tunnel, use `wss://`.
 
-```env
-VITE_WS_URL=wss://<your-domain>
+## What This Project Is Not
+
+This prototype does not include:
+
+- a production backend
+- a database
+- persistent storage
+- a real authentication service
+- AI/NLP-based topic understanding
+- production-grade collaboration infrastructure
+
+It is a controlled prototype focused on interface concept validation.
+
+## Technology Summary
+
+The codebase is built around:
+
+- React
+- TypeScript
+- Vite
+- React Router
+- local reducer-driven workspace state
+- optional WebSocket-based realtime sync
+- Tailwind-based styling and custom CSS theming
+
+## Commands That Matter Most
+
+For most development work, these are the commands that matter:
+
+```bash
+npm install
+npm run dev
 ```
 
-## Prototype Limitations
+If you want realtime demo sync, also run:
 
-- This is not a production chat system.
-- Authentication is seeded local demo auth, not a real auth service.
-- There is no database or persistent backend storage.
-- Realtime state is in memory only and is lost when the relay restarts.
-- Topic routing is scripted local logic, not AI or NLP classification.
-- The relay currently uses a single hardcoded room ID: `demo-room`.
+```bash
+npm run ws:server
+```
 
-## Files And Commands That Matter Most
+## About The Makefile
 
-If you are scanning the repo quickly, start here:
+The Makefile is only a convenience wrapper around the npm commands:
 
-- `npm install`
-- `npm run dev`
-- `npm run ws:server` for optional realtime demos
+- `make install`
+- `make dev`
+- `make ws`
+- `make build`
+
+It is not required to run the project.
+
+This is especially relevant on Clemson School of Computing Linux machines, where `npm` may not be available by default. In that environment, the Makefile can be a useful shorthand if the surrounding toolchain is already set up, but the project itself is fundamentally driven by the npm commands listed above.
