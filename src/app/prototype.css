@@ -1669,6 +1669,24 @@ body {
   color: var(--text-primary);
 }
 
+.topic-summary-textarea {
+  width: 100%;
+  min-height: 88px;
+  padding: 8px 10px;
+  font-size: 12px;
+  line-height: 1.45;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-primary);
+  resize: vertical;
+}
+
+.topic-summary-textarea:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 .create-topic-submit {
   width: fit-content;
 }

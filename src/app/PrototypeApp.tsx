@@ -158,12 +158,12 @@ function createEventMeta(userId: string, displayName: string, roomId: string) {
 export default function PrototypeApp() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const [currentView, setCurrentView] = useState<'chat' | 'map' | 'operator'>('chat');
+  const [currentView, setCurrentView] = useState<'chat' | 'map' | 'operator'>('map');
   const [chatEntryIntent, setChatEntryIntent] = useState<'startup' | 'tab' | 'focus' | null>('startup');
   const [workspace, dispatchWorkspace] = useReducer(workspaceReducer, undefined, createInitialWorkspaceState);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [expandedNodeIds, setExpandedNodeIds] = useState<Set<string>>(new Set(initialExpandedNodeIds));
-  const [hasEnteredMapView, setHasEnteredMapView] = useState(false);
+  const [hasEnteredMapView, setHasEnteredMapView] = useState(true);
   const [hasInteractedWithMap, setHasInteractedWithMap] = useState(false);
   const [detailMessagesEnabled, setDetailMessagesEnabled] = useState(true);
   const [draft, setDraft] = useState('');
@@ -336,17 +336,18 @@ export default function PrototypeApp() {
     sendWorkspaceEvent(event);
   };
 
-  const createNode = (title: string, parentId: string) => {
+  const createNode = (title: string, parentId: string, summary: string) => {
     if (!user) return;
     const parent = nodeById.get(parentId);
     if (!parent) return;
 
     const id = `node-${Date.now()}`;
+    const summaryText = summary.trim() || 'Topic added from the facilitator console.';
     const newNode: MapNodeData = {
       id,
       title,
       parentId,
-      summary: 'Topic added from the facilitator console.',
+      summary: summaryText,
       metadata: {},
       supportingMessageIds: [],
       childrenIds: [],

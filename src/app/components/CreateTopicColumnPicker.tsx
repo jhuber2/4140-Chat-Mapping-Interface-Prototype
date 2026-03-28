@@ -6,20 +6,22 @@ import { NodeFinderColumns, useNodeFinderState } from './nodeFinder';
 type CreateTopicColumnPickerProps = {
   nodes: MapNodeData[];
   nodeById: Map<string, MapNodeData>;
-  onCreateNode: (title: string, parentId: string) => void;
+  onCreateNode: (title: string, parentId: string, summary: string) => void;
 };
 
 export function CreateTopicColumnPicker({ nodes, nodeById, onCreateNode }: CreateTopicColumnPickerProps) {
   const { path, setPath, columns, currentPath, selectedNode } = useNodeFinderState(nodes, nodeById, null);
   const [title, setTitle] = useState('');
+  const [summary, setSummary] = useState('');
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault();
     if (!selectedNode) return;
     const trimmed = title.trim();
     if (!trimmed) return;
-    onCreateNode(trimmed, selectedNode.id);
+    onCreateNode(trimmed, selectedNode.id, summary.trim());
     setTitle('');
+    setSummary('');
   };
 
   return (
@@ -41,6 +43,19 @@ export function CreateTopicColumnPicker({ nodes, nodeById, onCreateNode }: Creat
           <NodeFinderColumns path={path} setPath={setPath} columns={columns} currentPath={currentPath} nodeById={nodeById} />
         </div>
       </div>
+
+      <label className="create-topic-title-label">
+        <span className="muted">Summary</span>
+        <textarea
+          className="topic-summary-textarea"
+          value={summary}
+          onChange={(event) => setSummary(event.target.value)}
+          placeholder="Short description for Map View topic details (optional)"
+          rows={4}
+          disabled={!selectedNode}
+          aria-label="New topic summary"
+        />
+      </label>
 
       <button type="submit" className="node-picker-done create-topic-submit" disabled={!selectedNode || !title.trim()}>
         Create topic

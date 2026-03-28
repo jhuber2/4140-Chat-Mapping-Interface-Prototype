@@ -11,7 +11,7 @@ type OperatorViewProps = {
   assignmentLog: AssignmentLog[];
   realtimeStatus: 'connecting' | 'connected' | 'disconnected';
   onAssign: (messageId: string, nodeId: string) => void;
-  onCreateNode: (title: string, parentId: string) => void;
+  onCreateNode: (title: string, parentId: string, summary: string) => void;
   onDeleteNode: (nodeId: string) => void;
   onResetWorkspace: () => void;
 };

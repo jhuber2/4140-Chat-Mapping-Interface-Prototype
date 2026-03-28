@@ -9,7 +9,12 @@ export type WorkspaceSnapshot = {
 
 export type RealtimeConnectionStatus = 'connecting' | 'connected' | 'disconnected';
 
-export type WorkspaceEventType = 'chat.message.created' | 'message.assigned' | 'node.created' | 'node.deleted' | 'workspace.reset';
+export type WorkspaceEventType =
+  | 'chat.message.created'
+  | 'message.assigned'
+  | 'node.created'
+  | 'node.deleted'
+  | 'workspace.reset';
 
 export type ChatMessageCreatedEvent = {
   eventId: string;
