@@ -55,10 +55,10 @@ export function DetailPanel({ onViewMessages }: DetailPanelProps) {
       {/* Metadata */}
       <div className="mb-5 space-y-1">
         <div style={{ fontSize: '13px', color: '#9FB0CC' }}>
-          First Discussed: Mar 3, 2023
+          First Discussed: Mar 3, 2026
         </div>
         <div style={{ fontSize: '13px', color: '#9FB0CC' }}>
-          Last Active: Mar 5, 2023
+          Last Active: Mar 5, 2026
         </div>
         <div style={{ fontSize: '13px', color: '#9FB0CC' }}>
           Messages: 19
