@@ -1,4 +1,4 @@
-# Chat Mapping Interface
+﻿# Chat Mapping Interface
 
 Chat Mapping Interface is a frontend HCI prototype for viewing the same team conversation in two synchronized forms:
 
@@ -28,7 +28,9 @@ Sign in with one of the seeded demo accounts:
 - Username: `boyd`
 - Username: `emmanuel`
 - Username: `graham`
-- Password for all demo accounts: `cpsc4140`
+- Username: `tester`
+- Password for our demo accounts: `cpsc4140`
+- Password for all test user accounts: `pw`
 
 After login, the protected prototype loads at `/app`.
 
